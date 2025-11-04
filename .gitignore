@@ -18,3 +18,81 @@ backend/obj/Debug/net6.0/MASDigitalService.GeneratedMSBuildEditorConfig.editorco
 backend/obj/Debug/net6.0/MASDigitalService.GlobalUsings.g.cs
 backend/obj/Debug/net6.0/rpswa.dswa.cache.json
 backend/obj/Debug/net6.0/staticwebassets.removed.txt
+/backend/bin/Debug
+
+# Python cache files
+__pycache__/
+*.pyc
+
+# Environment and config files
+.env
+
+# Log files
+logs/
+*.log
+
+# Temporary or build files
+tmp/
+*.tmp
+E:\CPY\Mas_utility\mas_utility\backend\__pycache__
+E:\CPY\Mas_utility\mas_utility\backend\logs
+E:\CPY\Mas_utility\mas_utility\backend\.env
+E:\CPY\Mas_utility\mas_utility\backend\tmp\data.txt
+# ==========================
+# Build and binary folders
+# ==========================
+bin/
+obj/
+out/
+build/
+dist/
+
+# ==========================
+# IDE and editor settings
+# ==========================
+# Visual Studio folder
+.vs/
+
+# Visual Studio Code folder
+.vscode/
+
+# JetBrains / PyCharm / Rider settings
+.idea/
+
+# ==========================
+# Python cache and virtual env
+# ==========================
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+venv/
+env/
+
+# ==========================
+# Logs and temporary files
+# ==========================
+*.log
+logs/
+tmp/
+*.tmp
+
+# ==========================
+# Environment and secrets
+# ==========================
+.env
+.env.*
+*.secret
+
+# ==========================
+# OS-specific files
+# ==========================
+# Windows
+Thumbs.db
+Desktop.ini
+
+# macOS
+.DS_Store
+*.vs
+/backend/.vs/MASDigitalService/v17/DocumentLayout.backup.json
+/backend/.vs/MASDigitalService/v17/DocumentLayout.json
