@@ -72,8 +72,8 @@ namespace MASDigitalService.Services
 
             var sampleData = new[]
             {
-                new { DayDate = DateTime.Today.AddDays(-2).ToString("yyyy-MM-dd"), DigiPay = 1500, DigiWallet = 800, StarEC = 600, SBI = 1200, SBI_J = 400, IndBank = 300, INBA = 250, IPPB = 180, IPBC = 220, Sakthi = 350, CUB = 280, TNEGA = 150, Airtel = 500, PayTM = 750, Jio = 450, TataPlay = 320, PendingNote = 100, TotCash = 2500, TotCum = 7950, TotalPending = 100, TodayExp = 500, TotalAll = 9950, Remarks = "Sample data" },
-                new { DayDate = DateTime.Today.AddDays(-1).ToString("yyyy-MM-dd"), DigiPay = 1800, DigiWallet = 950, StarEC = 720, SBI = 1400, SBI_J = 480, IndBank = 360, INBA = 300, IPPB = 200, IPBC = 250, Sakthi = 400, CUB = 320, TNEGA = 180, Airtel = 600, PayTM = 850, Jio = 520, TataPlay = 380, PendingNote = 150, TotCash = 3000, TotCum = 9690, TotalPending = 150, TodayExp = 600, TotalAll = 12240, Remarks = "Yesterday's record" }
+                new { DayDate = DateTime.Today.AddDays(-2).ToString("yyyy-MM-dd"), DigiPay = 1500, DigiWallet = 800, StarEC = 600, SBI = 1200, SBI_J = 400, IndBank = 300, INBA = 250, IPPB = 180, IPBC = 220, Canara = 350, CUB = 280, TNEGA = 150, Airtel = 500, PayTM = 750, Jio = 450, TataPlay = 320, PendingNote = 100, TotCash = 2500, TotCum = 7950, TotalPending = 100, TodayExp = 500, TotalAll = 9950, Remarks = "Sample data" },
+                new { DayDate = DateTime.Today.AddDays(-1).ToString("yyyy-MM-dd"), DigiPay = 1800, DigiWallet = 950, StarEC = 720, SBI = 1400, SBI_J = 480, IndBank = 360, INBA = 300, IPPB = 200, IPBC = 250, Canara = 400, CUB = 320, TNEGA = 180, Airtel = 600, PayTM = 850, Jio = 520, TataPlay = 380, PendingNote = 150, TotCash = 3000, TotCum = 9690, TotalPending = 150, TodayExp = 600, TotalAll = 12240, Remarks = "Yesterday's record" }
             };
 
             foreach (var data in sampleData)
@@ -89,7 +89,7 @@ namespace MASDigitalService.Services
                 command.Parameters.AddWithValue("@INBA", data.INBA);
                 command.Parameters.AddWithValue("@IPPB", data.IPPB);
                 command.Parameters.AddWithValue("@IPBC", data.IPBC);
-                command.Parameters.AddWithValue("@Sakthi", data.Sakthi);
+                command.Parameters.AddWithValue("@Canara", data.Canara);
                 command.Parameters.AddWithValue("@CUB", data.CUB);
                 command.Parameters.AddWithValue("@TNEGA", data.TNEGA);
                 command.Parameters.AddWithValue("@Airtel", data.Airtel);
@@ -149,8 +149,8 @@ namespace MASDigitalService.Services
             await connection.OpenAsync();
 
             var sql = @"
-                INSERT INTO SalesRecords (DayDate, DigiPay, DigiWallet, StarEC, SBI, SBI_J, IndBank, INBA, IPPB, IPBC, Sakthi, CUB, TNEGA, Airtel, PayTM, Jio, TataPlay, PendingNote, TotCash, TotCum, TotalPending, TodayExp, TotalAll, Remarks)
-                VALUES (@DayDate, @DigiPay, @DigiWallet, @StarEC, @SBI, @SBI_J, @IndBank, @INBA, @IPPB, @IPBC, @Sakthi, @CUB, @TNEGA, @Airtel, @PayTM, @Jio, @TataPlay, @PendingNote, @TotCash, @TotCum, @TotalPending, @TodayExp, @TotalAll, @Remarks);
+                INSERT INTO SalesRecords (DayDate, DigiPay, DigiWallet, StarEC, SBI, SBI_J, IndBank, INBA, IPPB, IPBC, Canara, CUB, TNEGA, Airtel, PayTM, Jio, TataPlay, PendingNote, TotCash, TotCum, TotalPending, TodayExp, TotalAll, Remarks)
+                VALUES (@DayDate, @DigiPay, @DigiWallet, @StarEC, @SBI, @SBI_J, @IndBank, @INBA, @IPPB, @IPBC, @Canara, @CUB, @TNEGA, @Airtel, @PayTM, @Jio, @TataPlay, @PendingNote, @TotCash, @TotCum, @TotalPending, @TodayExp, @TotalAll, @Remarks);
                 SELECT last_insert_rowid();";
 
             using var command = new SqliteCommand(sql, connection);
@@ -164,7 +164,7 @@ namespace MASDigitalService.Services
             command.Parameters.AddWithValue("@INBA", record.INBA);
             command.Parameters.AddWithValue("@IPPB", record.IPPB);
             command.Parameters.AddWithValue("@IPBC", record.IPBC);
-            command.Parameters.AddWithValue("@Sakthi", record.Sakthi);
+            command.Parameters.AddWithValue("@Sakthi", record.Canara);
             command.Parameters.AddWithValue("@CUB", record.CUB);
             command.Parameters.AddWithValue("@TNEGA", record.TNEGA);
             command.Parameters.AddWithValue("@Airtel", record.Airtel);
@@ -208,7 +208,7 @@ namespace MASDigitalService.Services
             command.Parameters.AddWithValue("@INBA", record.INBA);
             command.Parameters.AddWithValue("@IPPB", record.IPPB);
             command.Parameters.AddWithValue("@IPBC", record.IPBC);
-            command.Parameters.AddWithValue("@Sakthi", record.Sakthi);
+            command.Parameters.AddWithValue("@Sakthi", record.Canara);
             command.Parameters.AddWithValue("@CUB", record.CUB);
             command.Parameters.AddWithValue("@TNEGA", record.TNEGA);
             command.Parameters.AddWithValue("@Airtel", record.Airtel);

@@ -60,29 +60,15 @@ const theme = createTheme({
 });
 
 function App() {
-  const [user, setUser] = useState(null);
+  const [user, setUser] = useState({ name: 'Guest', role: 'admin' });
 
   const handleLogin = (userData) => {
     setUser(userData);
   };
 
   const handleLogout = () => {
-    setUser(null);
+    setUser({ name: 'Guest', role: 'admin' });
   };
-
-  if (!user) {
-    return (
-      <ThemeProvider theme={theme}>
-        <CssBaseline />
-        <Box sx={{ 
-          minHeight: '100vh',
-          background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)'
-        }}>
-          <Login onLogin={handleLogin} />
-        </Box>
-      </ThemeProvider>
-    );
-  }
 
   return (
     <ThemeProvider theme={theme}>

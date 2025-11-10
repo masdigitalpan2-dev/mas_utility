@@ -20,7 +20,7 @@ namespace MASDigitalService.Services
             connection.Open();
 
             var createTableSql = @"
-                CREATE TABLE IF NOT EXISTS daysale (
+                CREATE TABLE IF NOT EXISTS daysale1 (
                     Id INTEGER PRIMARY KEY AUTOINCREMENT,
                     DayDate TEXT NOT NULL,
                     DigiPay INTEGER DEFAULT 0,
@@ -32,7 +32,7 @@ namespace MASDigitalService.Services
                     INBA INTEGER DEFAULT 0,
                     IPPB INTEGER DEFAULT 0,
                     IPBC INTEGER DEFAULT 0,
-                    Sakthi INTEGER DEFAULT 0,
+                    Canara INTEGER DEFAULT 0,
                     CUB INTEGER DEFAULT 0,
                     TNEGA INTEGER DEFAULT 0,
                     Airtel INTEGER DEFAULT 0,
@@ -40,12 +40,21 @@ namespace MASDigitalService.Services
                     Jio INTEGER DEFAULT 0,
                     TataPlay INTEGER DEFAULT 0,
                     PendingNote INTEGER DEFAULT 0,
+                    r500 INTEGER DEFAULT 0,
+                    r200 INTEGER DEFAULT 0,
+                    r100 INTEGER DEFAULT 0,
+                    r50 INTEGER DEFAULT 0,
+                    r20 INTEGER DEFAULT 0,
+                    r10 INTEGER DEFAULT 0,
+                    rChange INTEGER DEFAULT 0,
                     TotCash INTEGER DEFAULT 0,
                     TotCum INTEGER DEFAULT 0,
                     TotalPending INTEGER DEFAULT 0,
                     TodayExp INTEGER DEFAULT 0,
                     TotalAll INTEGER DEFAULT 0,
-                    Remarks TEXT
+                    Remarks TEXT,
+                    created_at datetime,
+                    updated_at datetime
                 )";
 
             using var command = new SqliteCommand(createTableSql, connection);
@@ -112,8 +121,8 @@ namespace MASDigitalService.Services
             using var connection = new SqliteConnection(_connectionString);
             await connection.OpenAsync();
 
-            var sql = @"INSERT INTO daysale (DayDate, DigiPay, DigiWallet, StarEC, SBI, SBI_J, IndBank, INBA, IPPB, IPBC, Sakthi, CUB, TNEGA, Airtel, PayTM, Jio, TataPlay, PendingNote, TotCash, TotCum, TotalPending, TodayExp, TotalAll, Remarks) 
-                       VALUES (@DayDate, @DigiPay, @DigiWallet, @StarEC, @SBI, @SBI_J, @IndBank, @INBA, @IPPB, @IPBC, @Sakthi, @CUB, @TNEGA, @Airtel, @PayTM, @Jio, @TataPlay, @PendingNote, @TotCash, @TotCum, @TotalPending, @TodayExp, @TotalAll, @Remarks)";
+            var sql = @"INSERT INTO daysale (DayDate, DigiPay, DigiWallet, StarEC, SBI, SBI_J, IndBank, INBA, IPPB, IPBC, Canara, CUB, TNEGA, Airtel, PayTM, Jio, TataPlay, PendingNote, r500, r200, r100, r50, r20, r10, rChange, TotCash, TotCum, TotalPending, TodayExp, TotalAll, Remarks, created_at, updated_at) 
+                       VALUES (@DayDate, @DigiPay, @DigiWallet, @StarEC, @SBI, @SBI_J, @IndBank, @INBA, @IPPB, @IPBC, @Canara, @CUB, @TNEGA, @Airtel, @PayTM, @Jio, @TataPlay, @PendingNote, @r500, @r200, @r100, @r50, @r20, @r10, @rChange, @TotCash, @TotCum, @TotalPending, @TodayExp, @TotalAll, @Remarks, @created_at, @updated_at)";
             
             using var command = new SqliteCommand(sql, connection);
             command.Parameters.AddWithValue("@DayDate", record.DayDate.ToString("yyyy-MM-dd"));
@@ -126,7 +135,7 @@ namespace MASDigitalService.Services
             command.Parameters.AddWithValue("@INBA", record.INBA);
             command.Parameters.AddWithValue("@IPPB", record.IPPB);
             command.Parameters.AddWithValue("@IPBC", record.IPBC);
-            command.Parameters.AddWithValue("@Sakthi", record.Sakthi);
+            command.Parameters.AddWithValue("@Canara", record.Canara);
             command.Parameters.AddWithValue("@CUB", record.CUB);
             command.Parameters.AddWithValue("@TNEGA", record.TNEGA);
             command.Parameters.AddWithValue("@Airtel", record.Airtel);
@@ -134,12 +143,21 @@ namespace MASDigitalService.Services
             command.Parameters.AddWithValue("@Jio", record.Jio);
             command.Parameters.AddWithValue("@TataPlay", record.TataPlay);
             command.Parameters.AddWithValue("@PendingNote", record.PendingNote);
+            command.Parameters.AddWithValue("@r500", record.r500);
+            command.Parameters.AddWithValue("@r200", record.r200);
+            command.Parameters.AddWithValue("@r100", record.r100);
+            command.Parameters.AddWithValue("@r50", record.r50);
+            command.Parameters.AddWithValue("@r20", record.r20);
+            command.Parameters.AddWithValue("@r10", record.r10);
+            command.Parameters.AddWithValue("@rChange", record.rChange);
             command.Parameters.AddWithValue("@TotCash", record.TotCash);
             command.Parameters.AddWithValue("@TotCum", record.TotCum);
             command.Parameters.AddWithValue("@TotalPending", record.TotalPending);
             command.Parameters.AddWithValue("@TodayExp", record.TodayExp);
             command.Parameters.AddWithValue("@TotalAll", record.TotalAll);
             command.Parameters.AddWithValue("@Remarks", record.Remarks ?? "");
+            command.Parameters.AddWithValue("@created_at", DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss"));
+            command.Parameters.AddWithValue("@updated_at", DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss"));
 
             await command.ExecuteNonQueryAsync();
             return record;
@@ -150,7 +168,7 @@ namespace MASDigitalService.Services
             using var connection = new SqliteConnection(_connectionString);
             await connection.OpenAsync();
 
-            var sql = @"UPDATE daysale SET DayDate=@DayDate, DigiPay=@DigiPay, DigiWallet=@DigiWallet, StarEC=@StarEC, SBI=@SBI, SBI_J=@SBI_J, IndBank=@IndBank, INBA=@INBA, IPPB=@IPPB, IPBC=@IPBC, Sakthi=@Sakthi, CUB=@CUB, TNEGA=@TNEGA, Airtel=@Airtel, PayTM=@PayTM, Jio=@Jio, TataPlay=@TataPlay, PendingNote=@PendingNote, TotCash=@TotCash, TotCum=@TotCum, TotalPending=@TotalPending, TodayExp=@TodayExp, TotalAll=@TotalAll, Remarks=@Remarks WHERE Id=@Id";
+            var sql = @"UPDATE daysale SET DayDate=@DayDate, DigiPay=@DigiPay, DigiWallet=@DigiWallet, StarEC=@StarEC, SBI=@SBI, SBI_J=@SBI_J, IndBank=@IndBank, INBA=@INBA, IPPB=@IPPB, IPBC=@IPBC, Canara=@Canara, CUB=@CUB, TNEGA=@TNEGA, Airtel=@Airtel, PayTM=@PayTM, Jio=@Jio, TataPlay=@TataPlay, PendingNote=@PendingNote, r500=@r500, r200=@r200, r100=@r100, r50=@r50, r20=@r20, r10=@r10, rChange=@rChange, TotCash=@TotCash, TotCum=@TotCum, TotalPending=@TotalPending, TodayExp=@TodayExp, TotalAll=@TotalAll, Remarks=@Remarks, updated_at=@updated_at WHERE Id=@Id";
             
             using var command = new SqliteCommand(sql, connection);
             command.Parameters.AddWithValue("@DayDate", record.DayDate.ToString("yyyy-MM-dd"));
@@ -163,7 +181,7 @@ namespace MASDigitalService.Services
             command.Parameters.AddWithValue("@INBA", record.INBA);
             command.Parameters.AddWithValue("@IPPB", record.IPPB);
             command.Parameters.AddWithValue("@IPBC", record.IPBC);
-            command.Parameters.AddWithValue("@Sakthi", record.Sakthi);
+            command.Parameters.AddWithValue("@Canara", record.Canara);
             command.Parameters.AddWithValue("@CUB", record.CUB);
             command.Parameters.AddWithValue("@TNEGA", record.TNEGA);
             command.Parameters.AddWithValue("@Airtel", record.Airtel);
@@ -171,6 +189,13 @@ namespace MASDigitalService.Services
             command.Parameters.AddWithValue("@Jio", record.Jio);
             command.Parameters.AddWithValue("@TataPlay", record.TataPlay);
             command.Parameters.AddWithValue("@PendingNote", record.PendingNote);
+            command.Parameters.AddWithValue("@r500", record.r500);
+            command.Parameters.AddWithValue("@r200", record.r200);
+            command.Parameters.AddWithValue("@r100", record.r100);
+            command.Parameters.AddWithValue("@r50", record.r50);
+            command.Parameters.AddWithValue("@r20", record.r20);
+            command.Parameters.AddWithValue("@r10", record.r10);
+            command.Parameters.AddWithValue("@rChange", record.rChange);
             command.Parameters.AddWithValue("@TotCash", record.TotCash);
             command.Parameters.AddWithValue("@TotCum", record.TotCum);
             command.Parameters.AddWithValue("@TotalPending", record.TotalPending);
@@ -178,6 +203,7 @@ namespace MASDigitalService.Services
             command.Parameters.AddWithValue("@TotalAll", record.TotalAll);
             command.Parameters.AddWithValue("@Remarks", record.Remarks ?? "");
             command.Parameters.AddWithValue("@Id", id);
+            command.Parameters.AddWithValue("@updated_at", DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss"));
 
             var rowsAffected = await command.ExecuteNonQueryAsync();
             return rowsAffected > 0 ? await GetDaySaleByIdAsync(id) : null;
@@ -211,7 +237,7 @@ namespace MASDigitalService.Services
                 INBA = Convert.ToInt32(reader["INBA"]),
                 IPPB = Convert.ToInt32(reader["IPPB"]),
                 IPBC = Convert.ToInt32(reader["IPBC"]),
-                Sakthi = Convert.ToInt32(reader["Sakthi"]),
+                Canara = Convert.ToInt32(reader["Canara"]),
                 CUB = Convert.ToInt32(reader["CUB"]),
                 TNEGA = Convert.ToInt32(reader["TNEGA"]),
                 Airtel = Convert.ToInt32(reader["Airtel"]),
@@ -219,6 +245,13 @@ namespace MASDigitalService.Services
                 Jio = Convert.ToInt32(reader["Jio"]),
                 TataPlay = Convert.ToInt32(reader["TataPlay"]),
                 PendingNote = Convert.ToInt32(reader["PendingNote"]),
+                r500 = Convert.ToInt32(reader["r500"]),
+                r200 = Convert.ToInt32(reader["r200"]),
+                r100 = Convert.ToInt32(reader["r100"]),
+                r50 = Convert.ToInt32(reader["r50"]),
+                r20 = Convert.ToInt32(reader["r20"]),
+                r10 = Convert.ToInt32(reader["r10"]),
+                rChange = Convert.ToInt32(reader["rChange"]),
                 TotCash = Convert.ToInt32(reader["TotCash"]),
                 TotCum = Convert.ToInt32(reader["TotCum"]),
                 TotalPending = Convert.ToInt32(reader["TotalPending"]),

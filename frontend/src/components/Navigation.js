@@ -5,7 +5,7 @@ import {
 } from '@mui/material';
 import { 
   Home, Calculate, CreditCard, AccountBalance, 
-  Description, Build, Business, ExpandMore, ChevronRight 
+  Description, Build, Business, ExpandMore, ChevronRight, Analytics 
 } from '@mui/icons-material';
 import { Link } from 'react-router-dom';
 
@@ -147,19 +147,23 @@ const Navigation = () => {
           { label: 'Color Picker', url: 'https://www.google.com/search?q=color+picker' },
           { label: 'Unit Converter', url: 'https://www.google.com/search?q=unit+converter' },
           { label: 'Password Generator', url: 'https://www.google.com/search?q=password+generator' }
-        ],
-        'Business': [
-          { label: 'Online Work', url: '/onlinework' },
-          { label: 'Day Sales', url: '/daysales' },
-          { label: 'Customer Management', url: '/customers' },
-          { label: 'Pending Payments', url: '/pending' },
-          { label: 'Expenses', url: '/expenses' },
-          { label: 'UnAccount', url: '/unaccount' },
-          { label: 'Password Manager', url: '/password' },
-          { label: 'Reports', url: '/reports' }
         ]
       }
-    }
+    },
+    business: {
+      type: 'simple',
+      items: [
+        { label: 'Online Work', url: '/onlinework' },
+        { label: 'Day Sales', url: '/daysales' },
+        { label: 'Customer Management', url: '/customers' },
+        { label: 'Pending Payments', url: '/pending' },
+        { label: 'Expenses', url: '/expenses' },
+        { label: 'UnAccount', url: '/unaccount' },
+        { label: 'Password Manager', url: '/password' },
+        { label: 'Reports', url: '/reports' }
+      ]
+    },
+
   };
 
   const renderMenu = (menuName, menuData) => {
@@ -184,15 +188,17 @@ const Navigation = () => {
             <MenuItem 
               key={index} 
               onClick={() => {
-                if (item.url.startsWith('/')) {
+                if (menuName === 'business' || menuName === 'mas') {
+                  window.open(window.location.origin + item.url, '_blank');
+                } else if (item.url.startsWith('/')) {
                   // Internal link
                 } else {
                   window.open(item.url, '_blank');
                 }
                 handleMenuClose(menuName);
               }}
-              component={item.url.startsWith('/') ? Link : 'div'}
-              to={item.url.startsWith('/') ? item.url : undefined}
+              component={(menuName === 'business' || menuName === 'mas') ? 'div' : (item.url.startsWith('/') ? Link : 'div')}
+              to={(menuName === 'business' || menuName === 'mas') ? undefined : (item.url.startsWith('/') ? item.url : undefined)}
               sx={{
                 py: 1.5,
                 px: 3,
@@ -301,15 +307,17 @@ const Navigation = () => {
                 <MenuItem 
                   key={subIndex}
                   onClick={() => {
-                    if (item.url.startsWith('/')) {
+                    if (menuName === 'business') {
+                      window.open(window.location.origin + item.url, '_blank');
+                    } else if (item.url.startsWith('/')) {
                       // Internal link
                     } else {
                       window.open(item.url, '_blank');
                     }
                     handleMenuClose(menuName);
                   }}
-                  component={item.url.startsWith('/') ? Link : 'div'}
-                  to={item.url.startsWith('/') ? item.url : undefined}
+                  component={menuName === 'business' ? 'div' : (item.url.startsWith('/') ? Link : 'div')}
+                  to={menuName === 'business' ? undefined : (item.url.startsWith('/') ? item.url : undefined)}
                   sx={{
                     py: 1.2,
                     px: 2.5,
@@ -350,6 +358,7 @@ const Navigation = () => {
           startIcon={<Home />}
           sx={{
             mx: 0.5, px: 3, py: 1.2, borderRadius: 3, textTransform: 'none', fontWeight: '600',
+            minHeight: '40px',
             background: 'rgba(255,255,255,0.1)', backdropFilter: 'blur(10px)',
             border: '1px solid rgba(255,255,255,0.2)',
             transition: 'all 0.3s ease',
@@ -373,6 +382,7 @@ const Navigation = () => {
           }} />}
           sx={{
             mx: 0.5, px: 3, py: 1.2, borderRadius: 3, textTransform: 'none', fontWeight: '600',
+            minHeight: '40px',
             background: anchorEl.services ? 'linear-gradient(135deg, #1757b8 0%, #2196F3 100%)' : 'rgba(255,255,255,0.1)',
             backdropFilter: 'blur(10px)',
             border: '1px solid rgba(255,255,255,0.2)',
@@ -398,6 +408,7 @@ const Navigation = () => {
           }} />}
           sx={{
             mx: 0.5, px: 3, py: 1.2, borderRadius: 3, textTransform: 'none', fontWeight: '600',
+            minHeight: '40px',
             background: anchorEl.financial ? 'linear-gradient(135deg, #1757b8 0%, #2196F3 100%)' : 'rgba(255,255,255,0.1)',
             backdropFilter: 'blur(10px)',
             border: '1px solid rgba(255,255,255,0.2)',
@@ -423,6 +434,7 @@ const Navigation = () => {
           }} />}
           sx={{
             mx: 0.5, px: 3, py: 1.2, borderRadius: 3, textTransform: 'none', fontWeight: '600',
+            minHeight: '40px',
             background: anchorEl.tools ? 'linear-gradient(135deg, #1757b8 0%, #2196F3 100%)' : 'rgba(255,255,255,0.1)',
             backdropFilter: 'blur(10px)',
             border: '1px solid rgba(255,255,255,0.2)',
@@ -441,6 +453,7 @@ const Navigation = () => {
         {/* Local Pages */}
         <Button color="inherit" component={Link} to="/calculator" startIcon={<Calculate />}
           sx={{ mx: 0.5, px: 3, py: 1.2, borderRadius: 3, textTransform: 'none', fontWeight: '600',
+            minHeight: '40px',
             background: 'rgba(255,255,255,0.1)', backdropFilter: 'blur(10px)',
             border: '1px solid rgba(255,255,255,0.2)', transition: 'all 0.3s ease',
             '&:hover': { background: 'linear-gradient(135deg, #4caf50 0%, #66bb6a 100%)',
@@ -449,6 +462,7 @@ const Navigation = () => {
         </Button>
         <Button color="inherit" component={Link} to="/smartcard" startIcon={<CreditCard />}
           sx={{ mx: 0.5, px: 3, py: 1.2, borderRadius: 3, textTransform: 'none', fontWeight: '600',
+            minHeight: '40px',
             background: 'rgba(255,255,255,0.1)', backdropFilter: 'blur(10px)',
             border: '1px solid rgba(255,255,255,0.2)', transition: 'all 0.3s ease',
             '&:hover': { background: 'linear-gradient(135deg, #9c27b0 0%, #ba68c8 100%)',
@@ -457,6 +471,7 @@ const Navigation = () => {
         </Button>
         <Button color="inherit" component={Link} to="/upi" startIcon={<AccountBalance />}
           sx={{ mx: 0.5, px: 3, py: 1.2, borderRadius: 3, textTransform: 'none', fontWeight: '600',
+            minHeight: '40px',
             background: 'rgba(255,255,255,0.1)', backdropFilter: 'blur(10px)',
             border: '1px solid rgba(255,255,255,0.2)', transition: 'all 0.3s ease',
             '&:hover': { background: 'linear-gradient(135deg, #f44336 0%, #ef5350 100%)',
@@ -464,13 +479,53 @@ const Navigation = () => {
           UPI Payment
         </Button>
         <Button color="inherit" component={Link} to="/whatsapp"
-          sx={{ mx: 0.5, px: 3, py: 1.2, borderRadius: 3, textTransform: 'none', fontWeight: '600',
+          sx={{ mx: 0.5, px: 2, py: 1.2, borderRadius: 3, textTransform: 'none', fontWeight: '600',
+            minHeight: '40px', minWidth: '40px',
             background: 'rgba(255,255,255,0.1)', backdropFilter: 'blur(10px)',
             border: '1px solid rgba(255,255,255,0.2)', transition: 'all 0.3s ease',
             '&:hover': { background: 'linear-gradient(135deg, #25d366 0%, #128c7e 100%)',
               transform: 'translateY(-2px)', boxShadow: '0 8px 25px rgba(37,211,102,0.4)' } }}>
-          WhatsApp
+          <img src="/Images/whatsapp.png" alt="WhatsApp" style={{ width: '24px', height: '24px', borderRadius: '50%' }} />
         </Button>
+        <Button color="inherit" component={Link} to="/daysales" 
+          startIcon={<img src="/Images/MAS Logo Round.jpg" alt="MAS" style={{ width: '20px', height: '20px', borderRadius: '50%' }} />}
+          sx={{ mx: 0.5, px: 3, py: 1.2, borderRadius: 3, textTransform: 'none', fontWeight: '600',
+            minHeight: '40px',
+            background: 'rgba(255,255,255,0.1)', backdropFilter: 'blur(10px)',
+            border: '1px solid rgba(255,255,255,0.2)', transition: 'all 0.3s ease',
+            '&:hover': { background: 'linear-gradient(135deg, #8B5CF6 0%, #A855F7 100%)',
+              transform: 'translateY(-2px)', boxShadow: '0 8px 25px rgba(139,92,246,0.4)' } }}>
+          MAS App
+        </Button>
+
+        {/* Business Menu */}
+        <Button
+          color="inherit"
+          onClick={(e) => handleMenuOpen(e, 'business')}
+          startIcon={<Business />}
+          endIcon={<ExpandMore sx={{ 
+            transform: anchorEl.business ? 'rotate(180deg)' : 'rotate(0deg)',
+            transition: 'transform 0.3s ease'
+          }} />}
+          sx={{
+            mx: 0.5, px: 3, py: 1.2, borderRadius: 3, textTransform: 'none', fontWeight: '600',
+            minHeight: '40px',
+            background: anchorEl.business ? 'linear-gradient(135deg, #1757b8 0%, #2196F3 100%)' : 'rgba(255,255,255,0.1)',
+            backdropFilter: 'blur(10px)',
+            border: '1px solid rgba(255,255,255,0.2)',
+            transition: 'all 0.3s ease',
+            '&:hover': { 
+              background: 'linear-gradient(135deg, #1757b8 0%, #2196F3 100%)',
+              transform: 'translateY(-2px)',
+              boxShadow: '0 8px 25px rgba(23,87,184,0.4)'
+            }
+          }}
+        >
+          Business
+        </Button>
+        {renderMenu('business', menuItems.business)}
+
+
       </Toolbar>
     </AppBar>
   );

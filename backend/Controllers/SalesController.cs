@@ -116,7 +116,7 @@ namespace MASDigitalService.Controllers
                 salesRecord.TotCum = salesRecord.DigiPay + salesRecord.DigiWallet + salesRecord.StarEC + 
                                    salesRecord.SBI + salesRecord.IndBank + salesRecord.INBA + salesRecord.Airtel + 
                                    salesRecord.PayTM + salesRecord.Jio + salesRecord.TataPlay + salesRecord.IPPB + 
-                                   salesRecord.IPBC + salesRecord.CUB + salesRecord.Sakthi + salesRecord.TNEGA + 
+                                   salesRecord.IPBC + salesRecord.CUB + salesRecord.Canara + salesRecord.TNEGA + 
                                    salesRecord.SBI_J;
                 
                 salesRecord.TotalAll = salesRecord.TotCum + salesRecord.TotCash - salesRecord.TodayExp;
@@ -157,7 +157,7 @@ namespace MASDigitalService.Controllers
                 salesRecord.TotCum = salesRecord.DigiPay + salesRecord.DigiWallet + salesRecord.StarEC + 
                                    salesRecord.SBI + salesRecord.IndBank + salesRecord.INBA + salesRecord.Airtel + 
                                    salesRecord.PayTM + salesRecord.Jio + salesRecord.TataPlay + salesRecord.IPPB + 
-                                   salesRecord.IPBC + salesRecord.CUB + salesRecord.Sakthi + salesRecord.TNEGA + 
+                                   salesRecord.IPBC + salesRecord.CUB + salesRecord.Canara + salesRecord.TNEGA + 
                                    salesRecord.SBI_J;
                 
                 salesRecord.TotalAll = salesRecord.TotCum + salesRecord.TotCash - salesRecord.TodayExp;

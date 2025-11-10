@@ -1,4 +1,4 @@
-using System.ComponentModel.DataAnnotations;
+﻿using System.ComponentModel.DataAnnotations;
 using Swashbuckle.AspNetCore.Annotations;
 using System.ComponentModel;
 
@@ -51,9 +51,9 @@ namespace MASDigitalService.Models
         [DisplayName("IPBC")]
         public int IPBC { get; set; }
         
-        [SwaggerSchema(Description = "Sakthi/Canara payment amount")]
-        [DisplayName("Sakthi")]
-        public int Sakthi { get; set; }
+        [SwaggerSchema(Description = "Canara payment amount")]
+        [DisplayName("Canara")]
+        public int Canara { get; set; }
         
         [SwaggerSchema(Description = "CUB/City Union Bank payment amount")]
         [DisplayName("CUB")]
@@ -82,7 +82,35 @@ namespace MASDigitalService.Models
         [SwaggerSchema(Description = "Pending notes amount")]
         [DisplayName("Pending Note")]
         public int PendingNote { get; set; }
-        
+
+        [SwaggerSchema(Description = "Cash Denomination 500 amount")]
+        [DisplayName("₹500")]
+        public int r500 { get; set; }
+
+        [SwaggerSchema(Description = "Cash Denomination 200 amount")]
+        [DisplayName("₹200")]
+        public int r200 { get; set; }
+
+        [SwaggerSchema(Description = "Cash Denomination 100 amount")]
+        [DisplayName("Cash Denomination 100")]
+        public int r100 { get; set; }
+
+        [SwaggerSchema(Description = "Cash Denomination 50 amount")]
+        [DisplayName("Cash Denomination 50")]
+        public int r50 { get; set; }
+
+        [SwaggerSchema(Description = "Cash Denomination 20 amount")]
+        [DisplayName("Cash Denomination 20")]
+        public int r20 { get; set; }
+
+        [SwaggerSchema(Description = "Cash Denomination 10 amount")]
+        [DisplayName("Cash Denomination 10")]
+        public int r10 { get; set; }
+
+        [SwaggerSchema(Description = "Cash Denomination Change amount")]
+        [DisplayName("Cash Denomination Change")]
+        public int rChange { get; set; }
+
         [SwaggerSchema(Description = "Total cash amount")]
         [DisplayName("Total Cash")]
         public int TotCash { get; set; }

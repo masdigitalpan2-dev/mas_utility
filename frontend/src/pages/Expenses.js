@@ -1,170 +1,405 @@
 import React, { useState } from 'react';
-import { Box, Card, Typography, Button, TextField, Table, TableBody, TableCell, TableContainer, TableHead, TableRow, Dialog, DialogTitle, DialogContent, DialogActions, IconButton, Grid, MenuItem } from '@mui/material';
-import { Add, Edit, Delete, TrendingDown, Receipt } from '@mui/icons-material';
+import { Box, Card, CardContent, Typography, Button, TextField, Table, TableBody, TableCell, TableContainer, TableHead, TableRow, IconButton, Chip, MenuItem, InputAdornment } from '@mui/material';
+import { Add, Edit, Delete, Refresh, MoneyOff } from '@mui/icons-material';
+import MASAnalyticsSidebar from '../components/MASAnalyticsSidebar';
 
-const Expenses = () => {
-  const [expenses, setExpenses] = useState([
-    { id: 1, date: '2024-01-15', category: 'Office Supplies', description: 'Printer Paper', amount: 500, type: 'Office' },
-    { id: 2, date: '2024-01-14', category: 'Utilities', description: 'Internet Bill', amount: 1200, type: 'Utilities' }
-  ]);
-  const [open, setOpen] = useState(false);
+const Expenses = ({ onNavigate }) => {
+  const [expenses, setExpenses] = useState(() => {
+    const savedExpenses = localStorage.getItem('masExpenses');
+    return savedExpenses ? JSON.parse(savedExpenses) : [
+      { id: 1, category: 'Paper', amount: 500, date: '2025-11-09', description: 'Office supplies' },
+      { id: 2, category: 'Recharge', amount: 200, date: '2024-01-14', description: 'Mobile recharge' }
+    ];
+  });
   const [editId, setEditId] = useState(null);
-  const [formData, setFormData] = useState({ date: new Date().toISOString().split('T')[0], category: '', description: '', amount: '', type: 'Office' });
+  const [formData, setFormData] = useState({ category: '', amount: '', date: new Date().toISOString().split('T')[0], description: '' });
+  const [searchTerm, setSearchTerm] = useState('');
+  const [categoryFilter, setCategoryFilter] = useState('All');
+  const [fromDate, setFromDate] = useState('');
+  const [toDate, setToDate] = useState('');
 
-  const categories = ['Office Supplies', 'Utilities', 'Travel', 'Marketing', 'Maintenance', 'Other'];
-  const types = ['Office', 'Utilities', 'Travel', 'Marketing', 'Other'];
-
-  const handleSubmit = () => {
-    if (editId) {
-      setExpenses(expenses.map(e => e.id === editId ? { ...formData, id: editId, amount: parseFloat(formData.amount) } : e));
-    } else {
-      setExpenses([...expenses, { ...formData, id: Date.now(), amount: parseFloat(formData.amount) }]);
+  const handleSubmit = async () => {
+    if (!formData.category || !formData.amount) {
+      if (!window.Swal) {
+        const script = document.createElement('script');
+        script.src = 'https://cdn.jsdelivr.net/npm/sweetalert2@11';
+        document.head.appendChild(script);
+        await new Promise(resolve => script.onload = resolve);
+      }
+      await window.Swal.fire({
+        title: 'Missing Information',
+        text: 'Please fill in Category and Amount fields',
+        icon: 'error',
+        confirmButtonText: 'OK'
+      });
+      return;
     }
-    setOpen(false);
-    setFormData({ date: new Date().toISOString().split('T')[0], category: '', description: '', amount: '', type: 'Office' });
+    
+    let updatedExpenses;
+    if (editId) {
+      updatedExpenses = expenses.map(e => e.id === editId ? { ...formData, id: editId, amount: parseFloat(formData.amount) } : e);
+    } else {
+      updatedExpenses = [...expenses, { ...formData, id: Date.now(), amount: parseFloat(formData.amount) }];
+    }
+    setExpenses(updatedExpenses);
+    localStorage.setItem('masExpenses', JSON.stringify(updatedExpenses));
+    setFormData({ category: '', amount: '', date: new Date().toISOString().split('T')[0], description: '' });
     setEditId(null);
   };
 
   const handleEdit = (expense) => {
     setFormData(expense);
     setEditId(expense.id);
-    setOpen(true);
   };
 
-  const handleDelete = (id) => {
-    setExpenses(expenses.filter(e => e.id !== id));
+  const handleDelete = async (id) => {
+    if (!window.Swal) {
+      const script = document.createElement('script');
+      script.src = 'https://cdn.jsdelivr.net/npm/sweetalert2@11';
+      document.head.appendChild(script);
+      await new Promise(resolve => script.onload = resolve);
+    }
+    
+    const result = await window.Swal.fire({
+      title: 'Delete Expense?',
+      text: 'Are you sure you want to delete this expense?',
+      icon: 'warning',
+      showCancelButton: true,
+      confirmButtonColor: '#DC2626',
+      cancelButtonColor: '#6B7280',
+      confirmButtonText: 'Yes, Delete',
+      cancelButtonText: 'Cancel'
+    });
+    
+    if (result.isConfirmed) {
+      const updatedExpenses = expenses.filter(e => e.id !== id);
+      setExpenses(updatedExpenses);
+      localStorage.setItem('masExpenses', JSON.stringify(updatedExpenses));
+    }
   };
 
-  const totalExpenses = expenses.reduce((sum, e) => sum + e.amount, 0);
-  const monthlyExpenses = expenses.filter(e => e.date.startsWith('2024-01')).reduce((sum, e) => sum + e.amount, 0);
+  const filteredExpenses = expenses.filter(expense => {
+    const matchesSearch = expense.category.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                         expense.description.toLowerCase().includes(searchTerm.toLowerCase());
+    const matchesCategory = categoryFilter === 'All' || expense.category === categoryFilter;
+    const matchesDateRange = (!fromDate || expense.date >= fromDate) && (!toDate || expense.date <= toDate);
+    return matchesSearch && matchesCategory && matchesDateRange;
+  });
+
+  const totalExpenses = Math.round(filteredExpenses.reduce((sum, e) => sum + parseFloat(e.amount || 0), 0));
+  const todayExpenses = Math.round(expenses.filter(e => e.date === new Date().toISOString().split('T')[0]).reduce((sum, e) => sum + parseFloat(e.amount || 0), 0));
 
   return (
-    <Box sx={{ p: 3 }}>
-      <Box sx={{ display: 'flex', justifyContent: 'space-between', mb: 3 }}>
-        <Typography variant="h4" fontWeight="bold">Expense Management</Typography>
-        <Button variant="contained" startIcon={<Add />} onClick={() => setOpen(true)}>
-          Add Expense
-        </Button>
+    <Box sx={{ display: 'flex', height: '100vh', bgcolor: '#FAFAFA', overflow: 'hidden' }}>
+      <MASAnalyticsSidebar activeItem="Expenses" onNavigate={onNavigate} />
+      
+      <Box sx={{ flex: 1, p: 3 }}>
+        <Typography id="expenses-title" variant="h4" fontWeight="bold" sx={{ mb: 2 }}>Expenses</Typography>
+        
+        {/* Summary Cards */}
+        <Box id="expenses-summary" sx={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: 2, mb: 3 }}>
+          <Card id="total-expenses-card" sx={{ borderRadius: 2, boxShadow: 2, background: 'linear-gradient(135deg, #3997b3ff 0%, #078bb3ff 100%)' }}>
+            <CardContent sx={{ p: 1, textAlign: 'center' }}>
+              <Typography id="total-expenses-amount" variant="h5" sx={{ color: 'white', fontWeight: 'bold' }}>₹{totalExpenses.toLocaleString()}</Typography>
+              <Typography id="total-expenses-label" variant="body2" sx={{ color: 'rgba(255,255,255,0.9)' }}>Total Expenses</Typography>
+            </CardContent>
+          </Card>
+          <Card id="today-expenses-card" sx={{ borderRadius: 2, boxShadow: 2, background: 'linear-gradient(135deg, #e251edff 0%, #DC2626 100%)' }}>
+            <CardContent sx={{ p: 1, textAlign: 'center' }}>
+              <Typography id="today-expenses-amount" variant="h5" sx={{ color: 'white', fontWeight: 'bold' }}>₹{todayExpenses.toLocaleString()}</Typography>
+              <Typography id="today-expenses-label" variant="body2" sx={{ color: 'rgba(255,255,255,0.9)' }}>Today Expenses</Typography>
+            </CardContent>
+          </Card>
+        </Box>
+        
+        <Card id="expense-form-card" sx={{ mb: 3, background: 'linear-gradient(135deg, #725c72ff 0%, #f6f1f7ff 100%)', borderRadius: 3, boxShadow: 2 }}>
+          <CardContent sx={{ p: 2 }}>
+            {/*}
+            <Typography variant="h6" fontWeight="bold" sx={{ color: 'white', mb: 2, textAlign: 'center' }}>
+              {editId ? 'Edit Expense' : 'Add Expense'}
+            </Typography>
+            */}
+            <Box id="expense-form-fields" sx={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr 2fr', gap: 2, mb: 2 }}>
+              <TextField
+                id="expense-category-input"
+                select
+                label="Category"
+                value={formData.category}
+                onChange={(e) => setFormData({...formData, category: e.target.value})}
+                required
+                size="small"
+                sx={{
+                  '& .MuiOutlinedInput-root': {
+                    backgroundColor: 'white',
+                    borderRadius: 2,
+                    '& fieldset': { borderColor: '#8B5CF6' },
+                    '&:hover fieldset': { borderColor: '#7C3AED' },
+                    '&.Mui-focused fieldset': { borderColor: '#6D28D9' }
+                  }
+                }}
+              >
+                <MenuItem value="Paper">📄 Paper</MenuItem>
+                <MenuItem value="Recharge">📱 Recharge</MenuItem>
+                <MenuItem value="Salary">💰 Salary</MenuItem>
+                <MenuItem value="Stationery">✏️ Stationery</MenuItem>
+                <MenuItem value="Toner">🖨️ Toner</MenuItem>
+                <MenuItem value="Service">🔧 Service</MenuItem>
+                <MenuItem value="Water">💧 Water</MenuItem>
+                <MenuItem value="Other">❓ Other</MenuItem>
+              </TextField>
+              <TextField
+                id="expense-amount-input"
+                type="number"
+                label="Amount (₹)"
+                value={formData.amount}
+                onChange={(e) => setFormData({...formData, amount: e.target.value})}
+                size="small"
+                required
+                sx={{
+                  '& .MuiOutlinedInput-root': {
+                    backgroundColor: 'white',
+                    borderRadius: 2,
+                    '& fieldset': { borderColor: '#8B5CF6' },
+                    '&:hover fieldset': { borderColor: '#7C3AED' },
+                    '&.Mui-focused fieldset': { borderColor: '#6D28D9' }
+                  }
+                }}
+              />
+              <TextField
+                id="expense-date-input"
+                type="date"
+                label="Date"
+                value={formData.date}
+                onChange={(e) => setFormData({...formData, date: e.target.value})}
+                InputLabelProps={{ shrink: true }}
+                size="small"
+                sx={{
+                  '& .MuiOutlinedInput-root': {
+                    backgroundColor: 'white',
+                    borderRadius: 2,
+                    '& fieldset': { borderColor: '#8B5CF6' },
+                    '&:hover fieldset': { borderColor: '#7C3AED' },
+                    '&.Mui-focused fieldset': { borderColor: '#6D28D9' }
+                  }
+                }}
+              />
+              <TextField
+                id="expense-description-input"
+                label="Description"
+                multiline
+                rows={1}
+                value={formData.description}
+                onChange={(e) => setFormData({...formData, description: e.target.value})}
+                size="small"
+                sx={{
+                  '& .MuiOutlinedInput-root': {
+                    backgroundColor: 'white',
+                    borderRadius: 2,
+                    '& fieldset': { borderColor: '#8B5CF6' },
+                    '&:hover fieldset': { borderColor: '#7C3AED' },
+                    '&.Mui-focused fieldset': { borderColor: '#6D28D9' }
+                  }
+                }}
+              />
+            </Box>
+            <Box id="expense-form-buttons" sx={{ display: 'flex', justifyContent: 'flex-start', gap: 2 }}>
+              <Button 
+                id="expense-submit-btn"
+                onClick={handleSubmit}
+                variant="contained"
+                sx={{ 
+                  background: 'linear-gradient(135deg, #8B5CF6 0%, #7C3AED 100%)',
+                  fontWeight: 'bold',
+                  px: 4,
+                  py: 1.5,
+                  borderRadius: 3,
+                  boxShadow: '0 4px 15px rgba(139, 92, 246, 0.3)',
+                  textTransform: 'none',
+                  fontSize: '1rem',
+                  transition: 'all 0.3s ease',
+                  width: 250,
+                  height: 48,
+                  '&:hover': { 
+                    background: 'linear-gradient(135deg, #7C3AED 0%, #6D28D9 100%)',
+                    boxShadow: '0 6px 20px rgba(139, 92, 246, 0.4)',
+                    transform: 'translateY(-2px)'
+                  }
+                }}
+              >
+                {editId ? '✏️ Update Expense' : '+ Add Expense'}
+              </Button>
+              <Button
+                id="expense-reset-btn"
+                variant="contained"
+                startIcon={<Refresh />}
+                onClick={() => {
+                  setFormData({ category: '', amount: '', date: new Date().toISOString().split('T')[0], description: '' });
+                  setEditId(null);
+                }}
+                sx={{ bgcolor: '#b95d8d', '&:hover': { bgcolor: '#DC2626' }, width: 250, height: 48 }}
+              >
+                Reset Form
+              </Button>
+            </Box>
+          </CardContent>
+        </Card>
+
+        <Card id="expenses-list-card" sx={{ borderRadius: 3, boxShadow: 2, background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)' }}>
+          <CardContent>
+            <Box id="expenses-list-header" sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 1 }}>
+              <Box id="expenses-list-filters" sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
+                <Typography id="expenses-list-title" variant="h6" sx={{ color: 'white' }}>Expense List ({filteredExpenses.length})</Typography>
+                <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                  <Typography variant="caption" sx={{ color: 'rgba(255,255,255,0.8)', fontSize: '0.7rem' }}>From:</Typography>
+                  <input
+                    id="expense-from-date"
+                    type="date"
+                    value={fromDate}
+                    onChange={(e) => setFromDate(e.target.value)}
+                    style={{
+                      padding: '4px 8px',
+                      borderRadius: '4px',
+                      border: '1px solid rgba(255,255,255,0.3)',
+                      backgroundColor: 'rgba(255,255,255,0.1)',
+                      color: 'white',
+                      fontSize: '0.7rem',
+                      outline: 'none'
+                    }}
+                  />
+                </Box>
+                <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                  <Typography variant="caption" sx={{ color: 'rgba(255,255,255,0.8)', fontSize: '0.7rem' }}>To:</Typography>
+                  <input
+                    id="expense-to-date"
+                    type="date"
+                    value={toDate}
+                    onChange={(e) => setToDate(e.target.value)}
+                    style={{
+                      padding: '4px 8px',
+                      borderRadius: '4px',
+                      border: '1px solid rgba(255,255,255,0.3)',
+                      backgroundColor: 'rgba(255,255,255,0.1)',
+                      color: 'white',
+                      fontSize: '0.7rem',
+                      outline: 'none'
+                    }}
+                  />
+                </Box>
+                <Button
+                  id="expense-clear-dates-btn"
+                  variant="contained"
+                  size="small"
+                  onClick={() => { setFromDate(''); setToDate(''); }}
+                  sx={{
+                    bgcolor: 'rgba(255,255,255,0.2)',
+                    color: 'white',
+                    fontSize: '0.65rem',
+                    minWidth: 'auto',
+                    px: 1,
+                    '&:hover': { bgcolor: 'rgba(255,255,255,0.3)' }
+                  }}
+                >
+                  Clear
+                </Button>
+              </Box>
+              <Box id="expenses-search-filters" sx={{ display: 'flex', gap: 2 }}>
+                <TextField
+                  id="expense-search-input"
+                  placeholder="Search expenses..."
+                  value={searchTerm}
+                  onChange={(e) => setSearchTerm(e.target.value)}
+                  size="small"
+                  sx={{ 
+                    '& .MuiOutlinedInput-root': { 
+                      borderRadius: 2,
+                      backgroundColor: 'rgba(255, 255, 255, 0.9)',
+                      '& fieldset': { borderColor: 'rgba(255, 255, 255, 0.5)' },
+                      '&:hover fieldset': { borderColor: 'white' },
+                      '&.Mui-focused fieldset': { borderColor: 'white' }
+                    }
+                  }}
+                />
+                <TextField
+                  id="expense-category-filter"
+                  select
+                  label="Category"
+                  value={categoryFilter}
+                  onChange={(e) => setCategoryFilter(e.target.value)}
+                  size="small"
+                  sx={{ 
+                    minWidth: 120,
+                    '& .MuiOutlinedInput-root': { 
+                      borderRadius: 2,
+                      backgroundColor: 'rgba(255, 255, 255, 0.9)',
+                      '& fieldset': { borderColor: 'rgba(255, 255, 255, 0.5)' },
+                      '&:hover fieldset': { borderColor: 'white' },
+                      '&.Mui-focused fieldset': { borderColor: 'white' }
+                    }
+                  }}
+                >
+                  <MenuItem value="All">All</MenuItem>
+                  <MenuItem value="Paper">📄 Paper</MenuItem>
+                  <MenuItem value="Recharge">📱 Recharge</MenuItem>
+                  <MenuItem value="Salary">💰 Salary</MenuItem>
+                  <MenuItem value="Stationery">✏️ Stationery</MenuItem>
+                  <MenuItem value="Toner">🖨️ Toner</MenuItem>
+                  <MenuItem value="Service">🔧 Service</MenuItem>
+                  <MenuItem value="Water">💧 Water</MenuItem>
+                  <MenuItem value="Other">❓ Other</MenuItem>
+                </TextField>
+              </Box>
+            </Box>
+            <Box id="expenses-table-container" sx={{ 
+              maxHeight: 250, 
+              overflowY: 'auto',
+              overflowX: 'auto',
+              '&::-webkit-scrollbar': { width: '6px', height: '6px' },
+              '&::-webkit-scrollbar-track': { background: '#4399efff' },
+              '&::-webkit-scrollbar-thumb': { background: '#0f74f0ff', borderRadius: '3px' }
+            }}>
+              <table id="tbl-expenses-list" style={{ 
+                width: '100%', 
+                minWidth: '600px',
+                borderCollapse: 'collapse', 
+                fontSize: '0.75rem',
+                fontFamily: 'system-ui, -apple-system, sans-serif'
+              }}>
+                <thead style={{ position: 'sticky', top: 0, zIndex: 10 }}>
+                  <tr style={{ 
+                    background: 'linear-gradient(135deg, #f2d7f2ff 0%, #f7a1f9ff 90%)',
+                    borderBottom: '2px solid #E2E8F0',
+                    fontFamily: 'Open Sans', fontSize: '0.9rem'
+                  }}>
+                    <th style={{ padding: '12px 8px', textAlign: 'center', verticalAlign: 'middle', fontWeight: '800', color: '#3fb4eeff', minWidth: '120px' }}>Category</th>
+                    <th style={{ padding: '12px 8px', textAlign: 'center', verticalAlign: 'middle', fontWeight: '800', color: '#0b79afff', minWidth: '100px' }}>Amount</th>
+                    <th style={{ padding: '12px 8px', textAlign: 'center', verticalAlign: 'middle', fontWeight: '800', color: '#f5844cff', minWidth: '100px' }}>Date</th>
+                    <th style={{ padding: '12px 8px', textAlign: 'center', verticalAlign: 'middle', fontWeight: '800', color: '#6b7280', minWidth: '150px' }}>Description</th>
+                    <th style={{ padding: '12px 8px', textAlign: 'center', verticalAlign: 'middle', fontWeight: '800', color: '#3fb4eeff', minWidth: '120px' }}>Actions</th>
+                  </tr>
+                </thead>
+                <tbody style={{ backgroundColor: 'white', fontFamily: 'Century, serif', fontSize: '0.8rem' }}>
+                  {filteredExpenses.map((expense, index) => (
+                    <tr key={expense.id} style={{ backgroundColor: index % 2 === 0 ? '#F8FAFC' : '#FFFFFF' }}>
+                      <td style={{ padding: '6px 8px', textAlign: 'center', color: '#8B5CF6', fontWeight: '600' }}>{expense.category}</td>
+                      <td style={{ padding: '6px 8px', textAlign: 'center', color: '#EF4444', fontWeight: 'bold' }}>₹{expense.amount}</td>
+                      <td style={{ padding: '6px 8px', textAlign: 'center', color: '#8B5CF6', fontWeight: '600' }}>{expense.date}</td>
+                      <td style={{ padding: '6px 8px', textAlign: 'center', color: '#6b7280', fontWeight: '500' }}>{expense.description || '-'}</td>
+                      <td style={{ padding: '6px 8px', textAlign: 'center' }}>
+                        <IconButton onClick={() => handleEdit(expense)} color="primary">
+                          <Edit />
+                        </IconButton>
+                        <IconButton onClick={() => handleDelete(expense.id)} color="error">
+                          <Delete />
+                        </IconButton>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </Box>
+          </CardContent>
+        </Card>
       </Box>
-
-      <Grid container spacing={3} sx={{ mb: 3 }}>
-        <Grid item xs={12} md={6}>
-          <Card sx={{ p: 3, background: 'linear-gradient(135deg, #f44336 0%, #ef5350 100%)', color: 'white' }}>
-            <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
-              <TrendingDown sx={{ fontSize: 40 }} />
-              <Box>
-                <Typography variant="h4" fontWeight="bold">₹{monthlyExpenses}</Typography>
-                <Typography>This Month</Typography>
-              </Box>
-            </Box>
-          </Card>
-        </Grid>
-        <Grid item xs={12} md={6}>
-          <Card sx={{ p: 3, background: 'linear-gradient(135deg, #9c27b0 0%, #ba68c8 100%)', color: 'white' }}>
-            <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
-              <Receipt sx={{ fontSize: 40 }} />
-              <Box>
-                <Typography variant="h4" fontWeight="bold">₹{totalExpenses}</Typography>
-                <Typography>Total Expenses</Typography>
-              </Box>
-            </Box>
-          </Card>
-        </Grid>
-      </Grid>
-
-      <Card sx={{ p: 2 }}>
-        <TableContainer>
-          <Table>
-            <TableHead>
-              <TableRow>
-                <TableCell>Date</TableCell>
-                <TableCell>Category</TableCell>
-                <TableCell>Description</TableCell>
-                <TableCell>Type</TableCell>
-                <TableCell>Amount</TableCell>
-                <TableCell>Actions</TableCell>
-              </TableRow>
-            </TableHead>
-            <TableBody>
-              {expenses.map((expense) => (
-                <TableRow key={expense.id}>
-                  <TableCell>{expense.date}</TableCell>
-                  <TableCell>{expense.category}</TableCell>
-                  <TableCell>{expense.description}</TableCell>
-                  <TableCell>{expense.type}</TableCell>
-                  <TableCell>₹{expense.amount}</TableCell>
-                  <TableCell>
-                    <IconButton onClick={() => handleEdit(expense)} color="primary">
-                      <Edit />
-                    </IconButton>
-                    <IconButton onClick={() => handleDelete(expense.id)} color="error">
-                      <Delete />
-                    </IconButton>
-                  </TableCell>
-                </TableRow>
-              ))}
-            </TableBody>
-          </Table>
-        </TableContainer>
-      </Card>
-
-      <Dialog open={open} onClose={() => setOpen(false)} maxWidth="sm" fullWidth>
-        <DialogTitle>{editId ? 'Edit Expense' : 'Add Expense'}</DialogTitle>
-        <DialogContent>
-          <TextField
-            fullWidth
-            type="date"
-            label="Date"
-            value={formData.date}
-            onChange={(e) => setFormData({...formData, date: e.target.value})}
-            sx={{ mb: 2, mt: 1 }}
-            InputLabelProps={{ shrink: true }}
-          />
-          <TextField
-            fullWidth
-            select
-            label="Category"
-            value={formData.category}
-            onChange={(e) => setFormData({...formData, category: e.target.value})}
-            sx={{ mb: 2 }}
-          >
-            {categories.map((cat) => (
-              <MenuItem key={cat} value={cat}>{cat}</MenuItem>
-            ))}
-          </TextField>
-          <TextField
-            fullWidth
-            label="Description"
-            value={formData.description}
-            onChange={(e) => setFormData({...formData, description: e.target.value})}
-            sx={{ mb: 2 }}
-          />
-          <TextField
-            fullWidth
-            select
-            label="Type"
-            value={formData.type}
-            onChange={(e) => setFormData({...formData, type: e.target.value})}
-            sx={{ mb: 2 }}
-          >
-            {types.map((type) => (
-              <MenuItem key={type} value={type}>{type}</MenuItem>
-            ))}
-          </TextField>
-          <TextField
-            fullWidth
-            type="number"
-            label="Amount"
-            value={formData.amount}
-            onChange={(e) => setFormData({...formData, amount: e.target.value})}
-            sx={{ mb: 2 }}
-          />
-        </DialogContent>
-        <DialogActions>
-          <Button onClick={() => setOpen(false)}>Cancel</Button>
-          <Button onClick={handleSubmit} variant="contained">Save</Button>
-        </DialogActions>
-      </Dialog>
     </Box>
   );
 };

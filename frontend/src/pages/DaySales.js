@@ -1,9 +1,19 @@
 import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { Container, Paper, Typography, Button, TextField, Table, TableBody, TableCell, TableContainer, TableHead, TableRow, Grid, Box, Divider, Card, CardContent, Chip, IconButton, Tooltip, Alert, LinearProgress, Avatar, CircularProgress, Select, MenuItem, FormControl, InputLabel } from '@mui/material';
-import { Calculate, Save, Refresh, Assessment, TrendingUp, AccountBalance, Payment, CurrencyRupee, Analytics, Today, Receipt, Dashboard, Search, MoreVert, FilterList, GetApp, PictureAsPdf, TableChart, BarChart, Edit, Delete } from '@mui/icons-material';
+import { Calculate, Save, Refresh, Assessment, TrendingUp, AccountBalance, Payment, CurrencyRupee, Analytics, Today, Receipt, Dashboard, Search, MoreVert, FilterList, GetApp, PictureAsPdf, TableChart, BarChart, Edit, Delete, Person } from '@mui/icons-material';
+import MASAnalyticsSidebar from '../components/MASAnalyticsSidebar';
+import Customer from './Customer';
+import PendingPayments from './PendingPayments';
+import Expenses from './Expenses';
 
 const DaySales = () => {
+  const [currentView, setCurrentView] = useState('Day Sales');
   useEffect(() => {
+    // Set root height to 100vh
+    document.documentElement.style.height = '100vh';
+    document.body.style.height = '100vh';
+    document.body.style.margin = '0';
+    document.body.style.overflow = 'hidden';
     // Hide header and menu sections to save space
     const header = document.querySelector('header');
     const nav = document.querySelector('nav');
@@ -86,6 +96,11 @@ const DaySales = () => {
     
     return () => {
       // Restore on cleanup
+      document.documentElement.style.height = '';
+      document.body.style.height = '';
+      document.body.style.margin = '';
+      document.body.style.overflow = '';
+      
       if (header) header.style.display = '';
       if (nav) nav.style.display = '';
       if (menuBar) menuBar.style.display = '';
@@ -105,7 +120,7 @@ const DaySales = () => {
       
       if (footerBox) footerBox.style.display = '';
     };
-  }, []);
+  }, [currentView]);
 
   const [formData, setFormData] = useState({
     dateofappl: new Date().toISOString().split('T')[0],
@@ -157,6 +172,13 @@ const DaySales = () => {
   const [reportView, setReportView] = useState(false);
   const [editingRecord, setEditingRecord] = useState(null);
   const [loading, setLoading] = useState(false);
+  const [expenses, setExpenses] = useState(() => {
+    const savedExpenses = localStorage.getItem('masExpenses');
+    return savedExpenses ? JSON.parse(savedExpenses) : [
+      { id: 1, category: 'Paper', amount: 500, date: '2024-01-15', description: 'Office supplies' },
+      { id: 2, category: 'Recharge', amount: 200, date: '2024-01-14', description: 'Mobile recharge' }
+    ];
+  });
 
   const API_BASE_URL = 'https://localhost:52549/api/sales';
 
@@ -178,6 +200,19 @@ const DaySales = () => {
 
 
   const handleSubmit = async () => {
+    const totalDigital = (parseInt(formData.DigiPay) || 0) + (parseInt(formData.DigiWallet) || 0) + (parseInt(formData.starec) || 0) + (parseInt(formData.SBI) || 0) + (parseInt(formData.indBank) || 0) + (parseInt(formData.INBA) || 0) + (parseInt(formData.airtel) || 0) + (parseInt(formData.PayTM) || 0) + (parseInt(formData.Jio) || 0) + (parseInt(formData.TataPlay) || 0) + (parseInt(formData.ippb) || 0) + (parseInt(formData.IPBC) || 0) + (parseInt(formData.CUB) || 0) + (parseInt(formData.Canara) || 0) + (parseInt(formData.TNEGA) || 0) + (parseInt(formData.sbi_J) || 0);
+    if (totalDigital === 0 && formData.totCash === 0) {
+      alert('Digital and Cash Total cannot be zero. Please Check Digital and Cash Amount first.');
+      return;
+    }
+    if (formData.totCash === 0) {
+      alert('Cash total cannot be zero. Please calculate cash amount first.');
+      return;
+    }
+    if (totalDigital === 0) {
+      alert('Digital total cannot be zero. Please enter digital payment amounts.');
+      return;
+    }
     setLoading(true);
     
     const recordData = {
@@ -191,7 +226,7 @@ const DaySales = () => {
       inba: parseInt(formData.INBA) || 0,
       ippb: parseInt(formData.ippb) || 0,
       ipbc: parseInt(formData.IPBC) || 0,
-      sakthi: parseInt(formData.Canara) || 0,
+      Canara: parseInt(formData.Canara) || 0,
       cub: parseInt(formData.CUB) || 0,
       tnega: parseInt(formData.TNEGA) || 0,
       airtel: parseInt(formData.airtel) || 0,
@@ -199,6 +234,13 @@ const DaySales = () => {
       jio: parseInt(formData.Jio) || 0,
       tataPlay: parseInt(formData.TataPlay) || 0,
       pendingNote: parseInt(formData.PendingNote) || 0,
+      r500: parseInt(formData.amt500) || 0,
+      r200: parseInt(formData.amt200) || 0,
+      r100: parseInt(formData.amt100) || 0,
+      r50: parseInt(formData.amt50) || 0,
+      r20: parseInt(formData.amt20) || 0,
+      r10: parseInt(formData.amt10) || 0,
+      rChange: parseInt(formData.amtChange) || 0,
       totCash: parseInt(formData.totCash) || 0,
       totalPending: parseInt(formData.totalPending) || 0,
       todayExp: parseInt(formData.todayExp) || 0,
@@ -218,12 +260,35 @@ const DaySales = () => {
       if (response.ok) {
         const savedRecord = await response.json();
         if (editingRecord) {
-          setSalesRecords(prev => prev.map(r => r.id === editingRecord.id ? savedRecord : r));
           setEditingRecord(null);
-          alert('Record updated successfully!');
+          if (!window.Swal) {
+            const script = document.createElement('script');
+            script.src = 'https://cdn.jsdelivr.net/npm/sweetalert2@11';
+            document.head.appendChild(script);
+            await new Promise(resolve => script.onload = resolve);
+          }
+          await window.Swal.fire({
+            title: 'Updated!',
+            text: 'Record has been updated successfully.',
+            icon: 'success',
+            timer: 2000,
+            showConfirmButton: false
+          });
+          await fetchSalesRecords();
         } else {
-          setSalesRecords(prev => [savedRecord, ...prev]);
-          alert('Record saved successfully!');
+          if (!window.Swal) {
+            const script = document.createElement('script');
+            script.src = 'https://cdn.jsdelivr.net/npm/sweetalert2@11';
+            document.head.appendChild(script);
+            await new Promise(resolve => script.onload = resolve);
+          }
+          await window.Swal.fire({
+            title: 'Saved!',
+            text: 'Record saved successfully!',
+            icon: 'success',
+            confirmButtonText: 'OK'
+          });
+          await fetchSalesRecords();
         }
         resetForm();
       } else {
@@ -246,12 +311,12 @@ const DaySales = () => {
       DigiWallet: record.digiwallet || 0,
       starec: record.starec || 0,
       SBI: record.SBI || 0,
-      sbi_J: record.sbi_J || 0,
+      sbi_J: record.sbI_J || 0,
       indBank: record.indBank || 0,
       INBA: record.INBA || 0,
       ippb: record.ippb || 0,
       IPBC: record.IPBC || 0,
-      Canara: record.Canara || 0,
+      Canara: record.canara || 0,
       CUB: record.CUB || 0,
       TNEGA: record.TNEGA || 0,
       airtel: record.airtel || 0,
@@ -259,7 +324,7 @@ const DaySales = () => {
       Jio: record.Jio || 0,
       TataPlay: record.TataPlay || 0,
       PendingNote: record.PendingNote || 0,
-      amt500: 0, amt200: 0, amt100: 0, amt50: 0, amt20: 0, amt10: 0, amtChange: 0,
+      amt500: record.r500 || 0, amt200: record.r200 || 0, amt100: record.r100 || 0, amt50: record.r50 || 0, amt20: record.r20 || 0, amt10: record.r10 || 0, amtChange: record.rChange || 0,
       totCash: record.totCash || 0,
       totalPending: record.totalPending || 0,
       todayExp: record.todayExp || 0,
@@ -303,7 +368,13 @@ const DaySales = () => {
         
         if (response.ok) {
           setSalesRecords(prev => prev.filter(r => r.id !== recordId));
-          await window.Swal.fire('Deleted!', 'Record has been deleted.', 'success');
+          await window.Swal.fire({
+            title: 'Deleted!',
+            text: 'Record has been deleted.',
+            icon: 'success',
+            timer: 2000,
+            showConfirmButton: false
+          });
         } else {
           const errorText = await response.text();
           await window.Swal.fire('Error!', `Failed to delete record: ${errorText}`, 'error');
@@ -330,12 +401,12 @@ const DaySales = () => {
           digiwallet: r.digiWallet,
           starec: r.starEC,
           SBI: r.sbi,
-          sbi_J: r.sbi_J,
+          sbi_J: r.sbI_J,
           indBank: r.indBank,
           INBA: r.inba,
           ippb: r.ippb,
           IPBC: r.ipbc,
-          Canara: r.sakthi,
+          Canara: r.canara,
           CUB: r.cub,
           TNEGA: r.tnega,
           airtel: r.airtel,
@@ -347,7 +418,14 @@ const DaySales = () => {
           totCum: r.totCum,
           totalPending: r.totalPending,
           todayExp: r.todayExp,
-          TotalAll: r.totalAll
+          TotalAll: r.totalAll,
+          r500: r.r500,
+          r200: r.r200,
+          r100: r.r100,
+          r50: r.r50,
+          r20: r.r20,
+          r10: r.r10,
+          rChange: r.rChange
         }));
         setSalesRecords(formattedRecords);
       }
@@ -458,7 +536,69 @@ const DaySales = () => {
   const totalDigitalPaymentsAll = (parseInt(formData.DigiPay) || 0) + (parseInt(formData.DigiWallet) || 0) + (parseInt(formData.starec) || 0) + (parseInt(formData.SBI) || 0) + (parseInt(formData.indBank) || 0) + (parseInt(formData.INBA) || 0) + (parseInt(formData.airtel) || 0) + (parseInt(formData.PayTM) || 0) + (parseInt(formData.Jio) || 0) + (parseInt(formData.TataPlay) || 0) + (parseInt(formData.ippb) || 0) + (parseInt(formData.IPBC) || 0) + (parseInt(formData.CUB) || 0) + (parseInt(formData.Canara) || 0) + (parseInt(formData.TNEGA) || 0) + (parseInt(formData.sbi_J) || 0);
   
   const totalDigitalPayments = (parseInt(formData.DigiPay) || 0) +  (parseInt(formData.starec) || 0) + (parseInt(formData.SBI) || 0) + (parseInt(formData.indBank) || 0) + (parseInt(formData.INBA) || 0) + (parseInt(formData.airtel) || 0) + (parseInt(formData.PayTM) || 0) + (parseInt(formData.Jio) || 0) + (parseInt(formData.TataPlay) || 0) + (parseInt(formData.ippb) || 0) + (parseInt(formData.IPBC) || 0) + (parseInt(formData.CUB) || 0) + (parseInt(formData.Canara) || 0) + (parseInt(formData.sbi_J) || 0);
+  
+  // Calculate today's expenses based on selected date
+  const calculateTodayExpenses = (selectedDate, expenseData = expenses) => {
+    return Math.round(expenseData.filter(e => e.date === selectedDate).reduce((sum, e) => sum + parseFloat(e.amount || 0), 0));
+  };
+  
+  // Update todayExp when date changes and reload expenses from localStorage
+  React.useEffect(() => {
+    const updateExpenses = () => {
+      const savedExpenses = localStorage.getItem('masExpenses');
+      if (savedExpenses) {
+        const parsedExpenses = JSON.parse(savedExpenses);
+        setExpenses(parsedExpenses);
+        const todayExpenses = calculateTodayExpenses(formData.dateofappl, parsedExpenses);
+        setFormData(prev => ({ ...prev, todayExp: todayExpenses }));
+      } else {
+        const todayExpenses = calculateTodayExpenses(formData.dateofappl, expenses);
+        setFormData(prev => ({ ...prev, todayExp: todayExpenses }));
+      }
+    };
+    
+    updateExpenses();
+  }, [formData.dateofappl]);
+  
+  // Listen for localStorage changes and page visibility
+  React.useEffect(() => {
+    const handleStorageChange = () => {
+      const savedExpenses = localStorage.getItem('masExpenses');
+      if (savedExpenses) {
+        const parsedExpenses = JSON.parse(savedExpenses);
+        setExpenses(parsedExpenses);
+        const todayExpenses = calculateTodayExpenses(formData.dateofappl, parsedExpenses);
+        setFormData(prev => ({ ...prev, todayExp: todayExpenses }));
+      }
+    };
+    
+    const handleVisibilityChange = () => {
+      if (!document.hidden) {
+        handleStorageChange();
+      }
+    };
+    
+    window.addEventListener('storage', handleStorageChange);
+    document.addEventListener('visibilitychange', handleVisibilityChange);
+    window.addEventListener('focus', handleStorageChange);
+    
+    return () => {
+      window.removeEventListener('storage', handleStorageChange);
+      document.removeEventListener('visibilitychange', handleVisibilityChange);
+      window.removeEventListener('focus', handleStorageChange);
+    };
+  }, [formData.dateofappl]);
+  
   const grandTotal = totalDigitalPaymentsAll + (parseInt(formData.totCash) || 0) - (parseInt(formData.todayExp) || 0);
+
+  const formatDate = (dateString) => {
+    const date = new Date(dateString);
+    const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+    const day = date.getDate().toString().padStart(2, '0');
+    const month = months[date.getMonth()];
+    const year = date.getFullYear();
+    return `${day}-${month}-${year}`;
+  };
 
   const exportToCSV = () => {
     const headers = ['Date', 'DigiPay', 'DigiWallet', 'StarEC', 'SBI', 'SBI(J)', 'IndBank', 'INBA', 'IPPB', 'IPBC', 'Canara', 'City', 'ESevai', 'AirTel', 'PayTM', 'JIO', 'TataPlay', 'Pending', 'Cash', 'Digital', 'Total'];
@@ -575,56 +715,35 @@ const DaySales = () => {
     setTimeout(() => { printWindow.print(); printWindow.close(); }, 500);
   };
 
+  if (currentView === 'Customer') {
+    return <Customer onNavigate={setCurrentView} />;
+  }
+
+  if (currentView === 'Payments') {
+    return <PendingPayments onNavigate={setCurrentView} />;
+  }
+
+  if (currentView === 'Expenses') {
+    return <Expenses onNavigate={(view) => {
+      setCurrentView(view);
+      // Trigger expense data refresh when returning to Day Sales
+      if (view === 'Day Sales') {
+        setTimeout(() => {
+          const savedExpenses = localStorage.getItem('masExpenses');
+          if (savedExpenses) {
+            const parsedExpenses = JSON.parse(savedExpenses);
+            setExpenses(parsedExpenses);
+            const todayExpenses = calculateTodayExpenses(formData.dateofappl, parsedExpenses);
+            setFormData(prev => ({ ...prev, todayExp: todayExpenses }));
+          }
+        }, 100);
+      }
+    }} />;
+  }
+
   return (
-    <Box id="main-container" sx={{ display: 'flex', minHeight: '100vh', bgcolor: '#FAFAFA' }}>
-      {/* Sidebar */}
-      <Box 
-        id="sidebar"
-        sx={{ 
-          width: sidebarOpen ? 240 : 60, 
-          bgcolor: 'white', 
-          borderRight: '1px solid #E5E7EB',
-          p: sidebarOpen ? 2 : 1,
-          boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.1)',
-          transition: 'width 0.3s ease'
-        }}
-        onMouseEnter={() => setSidebarOpen(true)}
-        onMouseLeave={() => setSidebarOpen(false)}
-      >
-        {sidebarOpen && (
-          <Typography variant="h6" sx={{ fontWeight: 700, color: '#8B5CF6', mb: 3 }}>
-            MAS Analytics
-          </Typography>
-        )}
-        
-        {[
-          { icon: <Dashboard />, label: 'Dashboard', active: true },
-          { icon: <Analytics />, label: 'Day Sales' },
-          { icon: <AccountBalance />, label: 'Payments' },
-          { icon: <Receipt />, label: 'Reports' }
-        ].map((item, index) => (
-          <Box key={index} sx={{
-            display: 'flex',
-            alignItems: 'center',
-            gap: sidebarOpen ? 2 : 0,
-            p: 1.5,
-            borderRadius: 2,
-            mb: 1,
-            cursor: 'pointer',
-            bgcolor: item.active ? '#F3F4F6' : 'transparent',
-            color: item.active ? '#8B5CF6' : '#6B7280',
-            '&:hover': { bgcolor: '#F9FAFB' },
-            justifyContent: sidebarOpen ? 'flex-start' : 'center'
-          }}>
-            {item.icon}
-            {sidebarOpen && (
-              <Typography variant="body2" fontWeight={item.active ? 600 : 400}>
-                {item.label}
-              </Typography>
-            )}
-          </Box>
-        ))}
-      </Box>
+    <Box id="main-container" sx={{ display: 'flex', height: '100vh', bgcolor: '#FAFAFA', overflow: 'hidden' }}>
+      <MASAnalyticsSidebar activeItem={currentView} onNavigate={setCurrentView} />
 
       {/* Main Content */}
       <Box id="main-content" sx={{ flex: 1, p: 1 }}>
@@ -810,8 +929,9 @@ const DaySales = () => {
                           }} 
                         />
                         <input
+                          key={`${item.id}-${formData[item.id]}`}
                           tabIndex={0}
-                          defaultValue={formData[item.id] || ''}
+                          defaultValue={formData[item.id] || '0'}
                           onInput={(e) => {
                             const newValue = e.target.value.replace(/[^0-9]/g, '');
                             e.target.value = newValue;
@@ -871,8 +991,9 @@ const DaySales = () => {
                           }} 
                         />
                         <input
+                          key={`${item.id}-${formData[item.id]}`}
                           tabIndex={0}
-                          defaultValue={formData[item.id] || ''}
+                          defaultValue={formData[item.id] || '0'}
                           onInput={(e) => {
                             const newValue = e.target.value.replace(/[^0-9]/g, '');
                             e.target.value = newValue;
@@ -1325,7 +1446,7 @@ const DaySales = () => {
             ) : (
               /* Table View */
               <Box sx={{ 
-                maxHeight: 300, 
+                maxHeight: 200, 
                 overflowY: 'auto',
                 overflowX: 'auto',
                 '&::-webkit-scrollbar': { width: '6px', height: '6px' },
@@ -1359,14 +1480,14 @@ const DaySales = () => {
                     <th style={{ padding: '12px 6px', textAlign: 'center', fontWeight: '700', color: '#EF4444', minWidth: '55px' }}>PayTM</th>
                     <th style={{ padding: '12px 6px', textAlign: 'center', fontWeight: '700', color: '#8B5A2B', minWidth: '60px' }}>ESevai</th>
                     <th style={{ padding: '12px 6px', textAlign: 'center', fontWeight: '700', color: '#8B5A2B', minWidth: '55px' }}>AirTel</th>
-
                     <th style={{ padding: '12px 6px', textAlign: 'center', fontWeight: '700', color: '#8B5A2B', minWidth: '45px' }}>JIO</th>
                     <th style={{ padding: '12px 6px', textAlign: 'center', fontWeight: '700', color: '#8B5A2B', minWidth: '65px' }}>TataPlay</th>
-                    <th style={{ padding: '12px 6px', textAlign: 'center', fontWeight: '700', color: '#F59E0B', minWidth: '60px' }}>Pending</th>
+                    <th style={{ padding: '12px 6px', textAlign: 'center', fontWeight: '700', color: '#ef4e1de1', minWidth: '60px' }}>Pending</th>
+                    <th style={{ padding: '12px 6px', textAlign: 'center', fontWeight: '700', color: '#ef4e1de1', minWidth: '60px' }}>Expense</th>
                     <th style={{ padding: '12px 6px', textAlign: 'center', fontWeight: '700', color: '#06B6D4', minWidth: '55px' }}>Cash</th>
                     <th style={{ padding: '12px 6px', textAlign: 'center', fontWeight: '700', color: '#8B5CF6', minWidth: '60px' }}>Digital</th>
                     <th style={{ padding: '12px 6px', textAlign: 'center', fontWeight: '700', color: '#10B981', minWidth: '60px' }}>Total</th>
-                    <th style={{ padding: '12px 6px', textAlign: 'center', fontWeight: '700', color: '#EF4444', minWidth: '60px' }}>Difference</th>
+                    <th style={{ padding: '12px 6px', textAlign: 'center', fontWeight: '700', color: '#EF4444', minWidth: '60px' }}>Sale</th>
                     <th style={{ padding: '12px 6px', textAlign: 'center', fontWeight: '700', color: '#1E293B', minWidth: '80px' }}>Actions</th>
                   </tr>
                 </thead>
@@ -1381,7 +1502,7 @@ const DaySales = () => {
                     onMouseEnter={(e) => e.currentTarget.style.backgroundColor = '#EEF2FF'}
                     onMouseLeave={(e) => e.currentTarget.style.backgroundColor = index % 2 === 0 ? '#FFFFFF' : '#F8FAFC'}
                     >
-                      <td style={{ padding: '10px 8px', fontWeight: '600', color: '#1E293B', position: 'sticky', left: 0, background: 'inherit', borderRight: '1px solid #F1F5F9' }}>{record.dayDate}</td>
+                      <td style={{ padding: '10px 8px', fontWeight: '600', color: '#1E293B', position: 'sticky', left: 0, background: 'inherit', borderRight: '1px solid #F1F5F9' }}>{formatDate(record.dayDate)}</td>
                       <td style={{ padding: '10px 6px', textAlign: 'center', color: '#8B5CF6', fontWeight: '500' }}>₹{(record.digipay || 0).toLocaleString()}</td>
                       <td style={{ padding: '10px 6px', textAlign: 'center', color: '#8B5CF6', fontWeight: '500' }}>₹{(record.digiwallet || 0).toLocaleString()}</td>
                       <td style={{ padding: '10px 6px', textAlign: 'center', color: '#8B5CF6', fontWeight: '500' }}>₹{(record.starec || 0).toLocaleString()}</td>
@@ -1398,11 +1519,12 @@ const DaySales = () => {
                       <td style={{ padding: '10px 6px', textAlign: 'center', color: '#8B5A2B', fontWeight: '500' }}>₹{(record.airtel || 0).toLocaleString()}</td>
                       <td style={{ padding: '10px 6px', textAlign: 'center', color: '#8B5A2B', fontWeight: '500' }}>₹{(record.Jio || 0).toLocaleString()}</td>
                       <td style={{ padding: '10px 6px', textAlign: 'center', color: '#8B5A2B', fontWeight: '500' }}>₹{(record.TataPlay || 0).toLocaleString()}</td>
-                      <td style={{ padding: '10px 6px', textAlign: 'center', color: '#F59E0B', fontWeight: '500' }}>₹{(record.PendingNote || 0).toLocaleString()}</td>
+                      <td style={{ padding: '10px 6px', textAlign: 'center', color: '#ef4e1de1', fontWeight: '500' }}>₹{(record.PendingNote || 0).toLocaleString()}</td>
+                      <td style={{ padding: '10px 6px', textAlign: 'center', color: '#ef4e1de1', fontWeight: '500' }}>₹{(record.todayExp || 0).toLocaleString()}</td>
                       <td style={{ padding: '10px 6px', textAlign: 'center', color: '#06B6D4', fontWeight: '600', background: 'rgba(6, 182, 212, 0.1)' }}>₹{(record.totCash || 0).toLocaleString()}</td>
                       <td style={{ padding: '10px 6px', textAlign: 'center', color: '#8B5CF6', fontWeight: '600', background: 'rgba(139, 92, 246, 0.1)' }}>₹{(record.totCum || 0).toLocaleString()}</td>
                       <td style={{ padding: '10px 6px', textAlign: 'center', color: '#10B981', fontWeight: '700', background: 'rgba(16, 185, 129, 0.1)' }}>₹{(record.TotalAll || 0).toLocaleString()}</td>
-                      <td style={{ padding: '10px 6px', textAlign: 'center', color: '#6B7280', fontWeight: '700' }}>₹{index > 0 ? (filteredRecords[index-1]?.TotalAll || 0).toLocaleString() : '-'}</td>
+                      <td style={{ padding: '10px 6px', textAlign: 'center', color: '#6B7280', fontWeight: '700' }}>₹{filteredRecords[index+1] ? ((record.TotalAll || 0) - (filteredRecords[index+1]?.TotalAll || 0)).toLocaleString(): '0'}</td>
                       <td style={{ padding: '10px 6px', textAlign: 'center' }}>
                         <Box sx={{ display: 'flex', gap: 0.5, justifyContent: 'center' }}>
                           <IconButton
@@ -1430,6 +1552,18 @@ const DaySales = () => {
                             <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor">
                               <path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.890-5.335 11.893-11.893A11.821 11.821 0 0020.465 3.516"/>
                             </svg>
+                          </IconButton>
+                          <IconButton
+                            size="small"
+                            onClick={resetForm}
+                            sx={{ 
+                              color: '#FF6B35', 
+                              '&:hover': { bgcolor: 'rgba(255, 107, 53, 0.1)' },
+                              width: 24,
+                              height: 24
+                            }}
+                          >
+                            <Refresh sx={{ fontSize: '0.9rem' }} />
                           </IconButton>
                           <IconButton
                             size="small"
