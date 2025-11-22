@@ -1,535 +1,424 @@
-import React, { useState } from 'react';
-import { Container, Paper, Typography, TextField, Button, Table, TableBody, TableCell, TableContainer, TableHead, TableRow, Dialog, DialogTitle, DialogContent, DialogActions, IconButton, Box, Chip, Card, CardContent, Grid, InputAdornment, Fab, Tooltip, Alert } from '@mui/material';
-import { Add, Edit, Delete, Visibility, VisibilityOff, Security, Key, Search, FilterList, Lock, Person, Language, Update } from '@mui/icons-material';
+import React, { useState, useEffect } from 'react';
+import { Box, Typography, Button, TextField, Card, CardContent, IconButton, Avatar, InputAdornment, Dialog, DialogTitle, DialogContent, DialogActions, CircularProgress } from '@mui/material';
+import { Add, Edit, Delete, Visibility, VisibilityOff, Lock, Language, Person, Key, Notes, Search, Refresh, CreditCard, Pin, Phone } from '@mui/icons-material';
+import MASAnalyticsSidebar from '../components/MASAnalyticsSidebar';
 
-const PasswordManager = () => {
-  const [passwords, setPasswords] = useState([
-    { id: 1, website: 'Digital Seva Portal', username: 'admin@mas', password: 'admin123', category: 'Government', lastUpdated: '2024-01-15' },
-    { id: 2, website: 'NSDL PAN Portal', username: 'masdigital', password: 'pan@2024', category: 'Banking', lastUpdated: '2024-01-10' },
-    { id: 3, website: 'UIDAI Portal', username: 'mas_center', password: 'uidai@123', category: 'Government', lastUpdated: '2024-01-12' }
-  ]);
-  const [open, setOpen] = useState(false);
-  const [editId, setEditId] = useState(null);
-  const [formData, setFormData] = useState({ website: '', username: '', password: '', category: 'Government' });
-  const [showPasswords, setShowPasswords] = useState({});
+const PasswordManager = ({ onNavigate }) => {
+  const [passwords, setPasswords] = useState([]);
+  const [editingId, setEditingId] = useState(null);
   const [searchTerm, setSearchTerm] = useState('');
-  const [filterCategory, setFilterCategory] = useState('All');
+  const [focusedField, setFocusedField] = useState('');
+  const [formData, setFormData] = useState({
+    serviceName: '',
+    username: '',
+    mobile: '',
+    password: '',
+    transactionPassword: '',
+    pin: '',
+    mpin: '',
+    website: ''
+  });
+  const [loading, setLoading] = useState(false);
+  const [deleteConfirm, setDeleteConfirm] = useState({ open: false, id: null });
+  const [showPasswords, setShowPasswords] = useState({});
+  const [showFormPassword, setShowFormPassword] = useState(false);
+  const [showFormTxnPassword, setShowFormTxnPassword] = useState(false);
+  const [showFormPin, setShowFormPin] = useState(false);
+  const [showFormMpin, setShowFormMpin] = useState(false);
 
-  const categories = ['Government', 'Banking', 'Utility', 'Social Media', 'Other'];
-  const allCategories = ['All', ...categories];
+  useEffect(() => {
+    fetchPasswords();
+  }, []);
 
-  const handleSubmit = () => {
-    if (editId) {
-      setPasswords(passwords.map(p => p.id === editId ? { 
-        ...formData, 
-        id: editId, 
-        lastUpdated: new Date().toISOString().split('T')[0] 
-      } : p));
-    } else {
-      setPasswords([...passwords, { 
-        ...formData, 
-        id: Date.now(), 
-        lastUpdated: new Date().toISOString().split('T')[0] 
-      }]);
+  const fetchPasswords = async () => {
+    try {
+      const response = await fetch('http://localhost:52550/api/password');
+      if (response.ok) {
+        const data = await response.json();
+        setPasswords(data);
+      }
+    } catch (error) {
+      console.error('Error fetching passwords:', error);
+      setPasswords([]);
     }
-    setOpen(false);
-    setFormData({ website: '', username: '', password: '', category: 'Government' });
-    setEditId(null);
+  };
+
+  const handleInputChange = (e) => {
+    const { name, value } = e.target;
+    setFormData({
+      ...formData,
+      [name]: value
+    });
+  };
+
+  const handleSubmit = async () => {
+    if (!formData.serviceName || !formData.username || !formData.password) {
+      alert('Please fill all required fields (Service Name, Username, Password)');
+      return;
+    }
+
+    setLoading(true);
+    try {
+      const payload = {
+        serviceName: formData.serviceName,
+        username: formData.username,
+        password: formData.password,
+        website: formData.website || null,
+        category: formData.category || null,
+        notes: `Mobile: ${formData.mobile || 'N/A'} | TxnPwd: ${formData.transactionPassword || 'N/A'} | PIN: ${formData.pin || 'N/A'} | MPIN: ${formData.mpin || 'N/A'}`
+      };
+
+      if (editingId) {
+        const response = await fetch(`http://localhost:52550/api/password/${editingId}`, {
+          method: 'PUT',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(payload)
+        });
+        if (response.ok) {
+          fetchPasswords();
+        }
+      } else {
+        const response = await fetch('http://localhost:52550/api/password', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(payload)
+        });
+        if (response.ok) {
+          fetchPasswords();
+        }
+      }
+      resetForm();
+    } catch (error) {
+      console.error('Error saving password:', error);
+      alert('Error saving password. Please try again.');
+    }
+    setLoading(false);
   };
 
   const handleEdit = (password) => {
-    setFormData(password);
-    setEditId(password.id);
-    setOpen(true);
+    const notes = password.notes || '';
+    const mobileMatch = notes.match(/Mobile: ([^|]*)/)?.[1] || '';
+    const txnPwdMatch = notes.match(/TxnPwd: ([^|]*)/)?.[1] || '';
+    const pinMatch = notes.match(/PIN: ([^|]*)/)?.[1] || '';
+    const mpinMatch = notes.match(/MPIN: ([^|]*)/)?.[1] || '';
+    
+    setFormData({
+      serviceName: password.serviceName || '',
+      username: password.username || '',
+      password: password.password || '',
+      website: password.website || '',
+      mobile: mobileMatch === 'N/A' ? '' : mobileMatch,
+      transactionPassword: txnPwdMatch === 'N/A' ? '' : txnPwdMatch,
+      pin: pinMatch === 'N/A' ? '' : pinMatch,
+      mpin: mpinMatch === 'N/A' ? '' : mpinMatch
+    });
+    setEditingId(password.id);
   };
 
   const handleDelete = (id) => {
-    setPasswords(passwords.filter(p => p.id !== id));
+    setDeleteConfirm({ open: true, id });
+  };
+
+  const confirmDelete = async () => {
+    setLoading(true);
+    try {
+      const response = await fetch(`http://localhost:52550/api/password/${deleteConfirm.id}`, {
+        method: 'DELETE'
+      });
+      if (response.ok) {
+        fetchPasswords();
+      }
+    } catch (error) {
+      console.error('Error deleting password:', error);
+    }
+    setLoading(false);
+    setDeleteConfirm({ open: false, id: null });
+  };
+
+  const resetForm = () => {
+    setFormData({ serviceName: '', username: '', mobile: '', password: '', transactionPassword: '', pin: '', mpin: '', website: '' });
+    setEditingId(null);
   };
 
   const togglePasswordVisibility = (id) => {
     setShowPasswords(prev => ({ ...prev, [id]: !prev[id] }));
   };
 
-  const getCategoryColor = (category) => {
-    switch(category) {
-      case 'Government': return 'primary';
-      case 'Banking': return 'success';
-      case 'Utility': return 'warning';
-      case 'Social Media': return 'info';
-      default: return 'default';
-    }
-  };
-
-  const filteredPasswords = passwords.filter(password => {
-    const matchesSearch = password.website.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                         password.username.toLowerCase().includes(searchTerm.toLowerCase());
-    const matchesCategory = filterCategory === 'All' || password.category === filterCategory;
-    return matchesSearch && matchesCategory;
-  });
-
-  const generatePassword = () => {
-    const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789!@#$%^&*';
-    let password = '';
-    for (let i = 0; i < 12; i++) {
-      password += chars.charAt(Math.floor(Math.random() * chars.length));
-    }
-    setFormData({...formData, password});
-  };
+  const filteredPasswords = passwords.filter(password =>
+    password.serviceName?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    password.username?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    password.website?.toLowerCase().includes(searchTerm.toLowerCase())
+  );
 
   return (
-    <Box sx={{ minHeight: '100vh', bgcolor: 'grey.50', py: 4 }}>
-      <Container maxWidth="xl">
-        {/* Header Section */}
-        <Box sx={{ mb: 4 }}>
-          <Box sx={{ display: 'flex', alignItems: 'center', gap: 2, mb: 2 }}>
-            <Box sx={{ 
-              p: 2, 
-              borderRadius: 3, 
-              background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
-              color: 'white'
-            }}>
-              <Security sx={{ fontSize: 28 }} />
-            </Box>
+    <Box sx={{ display: 'flex', height: '100vh', bgcolor: '#FAFAFA', overflow: 'hidden' }}>
+      <MASAnalyticsSidebar activeItem="Password Manager" onNavigate={onNavigate} />
+
+      <Box sx={{ flex: 1, p: 2 }}>
+        {/* Top Bar */}
+        <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2 }}>
+          <Typography variant="h6" fontWeight={700} sx={{ color: '#1F2937' }}>
+            Password Manager
+          </Typography>
+          
+          <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
+            <Avatar sx={{ bgcolor: '#8B5CF6', width: 28, height: 28, fontSize: '0.7rem' }}>AD</Avatar>
             <Box>
-              <Typography variant="h4" fontWeight="700" color="text.primary">
-                Password Manager
-              </Typography>
-              <Typography variant="body2" color="text.secondary">
-                Secure storage for all your credentials
-              </Typography>
+              <Typography variant="caption" fontWeight={600} sx={{ fontSize: '0.7rem' }}>Admin</Typography>
+              <Typography variant="caption" color="text.secondary" sx={{ fontSize: '0.6rem' }}>Manager</Typography>
             </Box>
           </Box>
-
-          <Alert severity="info" sx={{ mb: 3, borderRadius: 2 }}>
-            <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-              <Lock sx={{ fontSize: 18 }} />
-              <Typography variant="body2">
-                Your passwords are encrypted and stored securely. Never share your credentials.
-              </Typography>
-            </Box>
-          </Alert>
         </Box>
 
-        {/* Stats Cards */}
-        <Grid container spacing={3} sx={{ mb: 4 }}>
-          <Grid item xs={12} sm={6} md={3}>
-            <Card sx={{ borderRadius: 3, background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)', color: 'white' }}>
-              <CardContent>
-                <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-                  <Box>
-                    <Typography variant="h4" fontWeight="bold">{passwords.length}</Typography>
-                    <Typography variant="body2" sx={{ opacity: 0.8 }}>Total Passwords</Typography>
-                  </Box>
-                  <Security sx={{ fontSize: 40, opacity: 0.8 }} />
-                </Box>
-              </CardContent>
-            </Card>
-          </Grid>
-          <Grid item xs={12} sm={6} md={3}>
-            <Card sx={{ borderRadius: 3, background: 'linear-gradient(135deg, #f093fb 0%, #f5576c 100%)', color: 'white' }}>
-              <CardContent>
-                <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-                  <Box>
-                    <Typography variant="h4" fontWeight="bold">{categories.length}</Typography>
-                    <Typography variant="body2" sx={{ opacity: 0.8 }}>Categories</Typography>
-                  </Box>
-                  <FilterList sx={{ fontSize: 40, opacity: 0.8 }} />
-                </Box>
-              </CardContent>
-            </Card>
-          </Grid>
-          <Grid item xs={12} sm={6} md={3}>
-            <Card sx={{ borderRadius: 3, background: 'linear-gradient(135deg, #4facfe 0%, #00f2fe 100%)', color: 'white' }}>
-              <CardContent>
-                <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-                  <Box>
-                    <Typography variant="h4" fontWeight="bold">{passwords.filter(p => p.category === 'Government').length}</Typography>
-                    <Typography variant="body2" sx={{ opacity: 0.8 }}>Government</Typography>
-                  </Box>
-                  <Language sx={{ fontSize: 40, opacity: 0.8 }} />
-                </Box>
-              </CardContent>
-            </Card>
-          </Grid>
-          <Grid item xs={12} sm={6} md={3}>
-            <Card sx={{ borderRadius: 3, background: 'linear-gradient(135deg, #43e97b 0%, #38f9d7 100%)', color: 'white' }}>
-              <CardContent>
-                <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-                  <Box>
-                    <Typography variant="h4" fontWeight="bold">{passwords.filter(p => p.category === 'Banking').length}</Typography>
-                    <Typography variant="body2" sx={{ opacity: 0.8 }}>Banking</Typography>
-                  </Box>
-                  <Security sx={{ fontSize: 40, opacity: 0.8 }} />
-                </Box>
-              </CardContent>
-            </Card>
-          </Grid>
-        </Grid>
-
-        {/* Search and Filter Section */}
-        <Card sx={{ mb: 3, borderRadius: 3, boxShadow: '0 4px 20px rgba(0,0,0,0.1)' }}>
-          <CardContent>
-            <Grid container spacing={3} alignItems="center">
-              <Grid item xs={12} md={6}>
-                <TextField
-                  fullWidth
-                  placeholder="Search passwords..."
-                  value={searchTerm}
-                  onChange={(e) => setSearchTerm(e.target.value)}
-                  InputProps={{
-                    startAdornment: (
-                      <InputAdornment position="start">
-                        <Search color="action" />
-                      </InputAdornment>
-                    ),
-                  }}
-                  sx={{ '& .MuiOutlinedInput-root': { borderRadius: 2 } }}
+        {/* Add Password Form */}
+        <Card sx={{ mb: 2, borderRadius: 3, boxShadow: 2, background: 'linear-gradient(135deg, #00d2ff 0%, #ff00a6 100%)' }}>
+          <CardContent sx={{ background: 'linear-gradient(135deg, #f093fb 25%, #ee7989ff 100%)', borderRadius: 2 }}>
+            <Typography variant="h6" sx={{ mb: 2 }}>{editingId ? 'Edit Password' : 'Add New Password'}</Typography> 
+            <form onSubmit={(e) => { e.preventDefault(); handleSubmit(); }}>
+              <Box sx={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 2, mb: 2 }}>
+                <TextField 
+                  name="serviceName" 
+                  value={formData.serviceName} 
+                  onChange={handleInputChange} 
+                  onFocus={() => setFocusedField('serviceName')} 
+                  onBlur={() => setFocusedField('')} 
+                  size="small" 
+                  required 
+                  sx={{ '& .MuiOutlinedInput-root': { borderRadius: 2, bgcolor: 'white', '& fieldset': { borderColor: '#8B5CF6' } } }} 
+                  InputProps={{ startAdornment: <InputAdornment position="start"><Language sx={{ mr: 0.5 }} />{!formData.serviceName && focusedField !== 'serviceName' && 'Service Name'}</InputAdornment> }} 
                 />
-              </Grid>
-              <Grid item xs={12} md={4}>
-                <TextField
-                  fullWidth
-                  select
-                  label="Filter by Category"
-                  value={filterCategory}
-                  onChange={(e) => setFilterCategory(e.target.value)}
-                  SelectProps={{ native: true }}
-                  sx={{ '& .MuiOutlinedInput-root': { borderRadius: 2 } }}
+                <TextField 
+                  name="username" 
+                  value={formData.username} 
+                  onChange={handleInputChange} 
+                  onFocus={() => setFocusedField('username')} 
+                  onBlur={() => setFocusedField('')} 
+                  size="small" 
+                  required 
+                  sx={{ '& .MuiOutlinedInput-root': { borderRadius: 2, bgcolor: 'white', '& fieldset': { borderColor: '#8B5CF6' } } }} 
+                  InputProps={{ startAdornment: <InputAdornment position="start"><Person sx={{ mr: 0.5 }} />{!formData.username && focusedField !== 'username' && 'Username/Email'}</InputAdornment> }} 
+                />
+                <TextField 
+                  name="password" 
+                  type={showFormPassword ? 'text' : 'password'} 
+                  value={formData.password} 
+                  onChange={handleInputChange} 
+                  onFocus={() => setFocusedField('password')} 
+                  onBlur={() => setFocusedField('')} 
+                  size="small" 
+                  required 
+                  sx={{ '& .MuiOutlinedInput-root': { borderRadius: 2, bgcolor: 'white', '& fieldset': { borderColor: '#8B5CF6' } } }} 
+                  InputProps={{ 
+                    startAdornment: <InputAdornment position="start"><Key sx={{ mr: 0.5 }} />{!formData.password && focusedField !== 'password' && 'Password'}</InputAdornment>,
+                    endAdornment: <InputAdornment position="end">
+                      <IconButton size="small" onClick={() => setShowFormPassword(!showFormPassword)}>
+                        {showFormPassword ? <VisibilityOff sx={{ fontSize: '0.9rem' }} /> : <Visibility sx={{ fontSize: '0.9rem' }} />}
+                      </IconButton>
+                    </InputAdornment>
+                  }} 
+                />
+                <TextField 
+                  name="transactionPassword" 
+                  type={showFormTxnPassword ? 'text' : 'password'} 
+                  value={formData.transactionPassword} 
+                  onChange={handleInputChange} 
+                  onFocus={() => setFocusedField('transactionPassword')} 
+                  onBlur={() => setFocusedField('')} 
+                  size="small" 
+                  sx={{ '& .MuiOutlinedInput-root': { borderRadius: 2, bgcolor: 'white', '& fieldset': { borderColor: '#8B5CF6' } } }} 
+                  InputProps={{ 
+                    startAdornment: <InputAdornment position="start"><CreditCard sx={{ mr: 0.5 }} />{!formData.transactionPassword && focusedField !== 'transactionPassword' && 'Transaction Password'}</InputAdornment>,
+                    endAdornment: <InputAdornment position="end">
+                      <IconButton size="small" onClick={() => setShowFormTxnPassword(!showFormTxnPassword)}>
+                        {showFormTxnPassword ? <VisibilityOff sx={{ fontSize: '0.9rem' }} /> : <Visibility sx={{ fontSize: '0.9rem' }} />}
+                      </IconButton>
+                    </InputAdornment>
+                  }} 
+                />
+              </Box>
+              <Box sx={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 2, mb: 2 }}>
+                <TextField 
+                  name="pin" 
+                  type={showFormPin ? 'text' : 'password'} 
+                  value={formData.pin} 
+                  onChange={handleInputChange} 
+                  onFocus={() => setFocusedField('pin')} 
+                  onBlur={() => setFocusedField('')} 
+                  size="small" 
+                  sx={{ '& .MuiOutlinedInput-root': { borderRadius: 2, bgcolor: 'white', '& fieldset': { borderColor: '#8B5CF6' } } }} 
+                  InputProps={{ 
+                    startAdornment: <InputAdornment position="start"><Pin sx={{ mr: 0.5 }} />{!formData.pin && focusedField !== 'pin' && 'PIN'}</InputAdornment>,
+                    endAdornment: <InputAdornment position="end">
+                      <IconButton size="small" onClick={() => setShowFormPin(!showFormPin)}>
+                        {showFormPin ? <VisibilityOff sx={{ fontSize: '0.9rem' }} /> : <Visibility sx={{ fontSize: '0.9rem' }} />}
+                      </IconButton>
+                    </InputAdornment>
+                  }} 
+                />
+                <TextField 
+                  name="mpin" 
+                  type={showFormMpin ? 'text' : 'password'} 
+                  value={formData.mpin} 
+                  onChange={handleInputChange} 
+                  onFocus={() => setFocusedField('mpin')} 
+                  onBlur={() => setFocusedField('')} 
+                  size="small" 
+                  sx={{ '& .MuiOutlinedInput-root': { borderRadius: 2, bgcolor: 'white', '& fieldset': { borderColor: '#8B5CF6' } } }} 
+                  InputProps={{ 
+                    startAdornment: <InputAdornment position="start"><Pin sx={{ mr: 0.5 }} />{!formData.mpin && focusedField !== 'mpin' && 'MPIN'}</InputAdornment>,
+                    endAdornment: <InputAdornment position="end">
+                      <IconButton size="small" onClick={() => setShowFormMpin(!showFormMpin)}>
+                        {showFormMpin ? <VisibilityOff sx={{ fontSize: '0.9rem' }} /> : <Visibility sx={{ fontSize: '0.9rem' }} />}
+                      </IconButton>
+                    </InputAdornment>
+                  }} 
+                />
+                <TextField 
+                  name="mobile" 
+                  value={formData.mobile} 
+                  onChange={handleInputChange} 
+                  onFocus={() => setFocusedField('mobile')} 
+                  onBlur={() => setFocusedField('')} 
+                  size="small" 
+                  sx={{ '& .MuiOutlinedInput-root': { borderRadius: 2, bgcolor: 'white', '& fieldset': { borderColor: '#8B5CF6' } } }} 
+                  InputProps={{ startAdornment: <InputAdornment position="start"><Phone sx={{ mr: 0.5 }} />{!formData.mobile && focusedField !== 'mobile' && 'Mobile Number'}</InputAdornment> }} 
+                />
+                <TextField 
+                  name="website" 
+                  value={formData.website} 
+                  onChange={handleInputChange} 
+                  onFocus={() => setFocusedField('website')} 
+                  onBlur={() => setFocusedField('')} 
+                  size="small" 
+                  sx={{ '& .MuiOutlinedInput-root': { borderRadius: 2, bgcolor: 'white', '& fieldset': { borderColor: '#8B5CF6' } } }} 
+                  InputProps={{ startAdornment: <InputAdornment position="start"><Language sx={{ mr: 0.5 }} />{!formData.website && focusedField !== 'website' && 'Website URL'}</InputAdornment> }} 
+                />
+              </Box>
+
+              <Box sx={{ display: 'flex', gap: 2 }}>
+                <Button
+                  type="submit"
+                  variant="contained"
+                  startIcon={loading ? <CircularProgress size={16} /> : <Add />}
+                  disabled={loading}
+                  sx={{ bgcolor: '#7038f1ff' }}
                 >
-                  {allCategories.map((cat) => (
-                    <option key={cat} value={cat}>{cat}</option>
-                  ))}
-                </TextField>
-              </Grid>
-              <Grid item xs={12} md={2}>
-                <Button 
-                  fullWidth
-                  variant="contained" 
-                  startIcon={<Add />} 
-                  onClick={() => setOpen(true)}
-                  sx={{ 
-                    borderRadius: 2, 
-                    py: 1.5,
-                    background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)'
-                  }}
-                >
-                  Add New
+                  {editingId ? 'Update Password' : 'Add Password'}
                 </Button>
-              </Grid>
-            </Grid>
+                <Button
+                  variant="contained"
+                  startIcon={<Refresh />}
+                  onClick={resetForm}
+                  disabled={loading}
+                  sx={{ bgcolor: '#b95d8d', '&:hover': { bgcolor: '#DC2626' } }}
+                >
+                  Reset Form
+                </Button>
+              </Box>
+            </form>
           </CardContent>
         </Card>
 
-        {/* Passwords Table */}
-        <Card sx={{ borderRadius: 3, boxShadow: '0 4px 20px rgba(0,0,0,0.1)' }}>
-          <CardContent sx={{ p: 0 }}>
-            <Box sx={{ p: 3, borderBottom: '1px solid', borderColor: 'divider' }}>
-              <Typography variant="h6" fontWeight="bold" color="text.primary">
-                Stored Passwords ({filteredPasswords.length})
-              </Typography>
+        {/* Search and Password List */}
+        <Card sx={{ borderRadius: 3, boxShadow: 2, background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)' }}>
+          <CardContent>
+            <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2 }}>
+              <Typography variant="h6">Password List ({filteredPasswords.length})</Typography>
+              <TextField
+                placeholder="Search passwords..."
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+                size="small"
+                sx={{ '& .MuiOutlinedInput-root': { borderRadius: 2, bgcolor: 'white', '& fieldset': { borderColor: '#8B5CF6' } } }}
+                InputProps={{
+                  startAdornment: <Search sx={{ mr: 1, color: 'text.secondary' }} />
+                }}
+              />
             </Box>
-            <TableContainer>
-              <Table>
-                <TableHead>
-                  <TableRow sx={{ 
-                    backgroundColor: 'grey.50',
-                    '& .MuiTableCell-head': {
-                      fontWeight: 'bold',
-                      color: 'text.primary',
-                      fontSize: '0.875rem'
-                    }
+
+            <Box sx={{ 
+              maxHeight: 350, 
+              overflowY: 'auto',
+              overflowX: 'auto',
+              '&::-webkit-scrollbar': { width: '6px', height: '6px' },
+              '&::-webkit-scrollbar-track': { background: '#4399efff' },
+              '&::-webkit-scrollbar-thumb': { background: '#0f74f0ff', borderRadius: '3px' }
+            }}>
+              <table style={{ 
+                width: '100%', 
+                minWidth: '800px',
+                borderCollapse: 'collapse', 
+                fontSize: '0.65rem',
+                fontFamily: 'system-ui, -apple-system, sans-serif'
+              }}>
+                <thead style={{ position: 'sticky', top: 0, zIndex: 10 }}>
+                  <tr style={{ 
+                    background: 'linear-gradient(135deg, #f2d7f2ff 0%, #f7a1f9ff 90%)',
+                    borderBottom: '2px solid #E2E8F0',
+                    fontFamily: 'Open Sans', fontSize: '0.9rem'
                   }}>
-                    <TableCell>Website/Service</TableCell>
-                    <TableCell>Username</TableCell>
-                    <TableCell>Password</TableCell>
-                    <TableCell>Category</TableCell>
-                    <TableCell>Last Updated</TableCell>
-                    <TableCell align="center">Actions</TableCell>
-                  </TableRow>
-                </TableHead>
-                <TableBody>
+                    <th style={{ padding: '12px 6px', textAlign: 'center', verticalAlign: 'middle', fontWeight: '800', color: '#3fb4eeff', minWidth: '120px' }}>Service Name</th>
+                    <th style={{ padding: '12px 6px', textAlign: 'center', verticalAlign: 'middle', fontWeight: '800', color: '#3fb4eeff', minWidth: '100px' }}>Username</th>
+                    <th style={{ padding: '12px 6px', textAlign: 'center', verticalAlign: 'middle', fontWeight: '800', color: '#ea2d63ff', minWidth: '100px' }}>Password</th>
+                    <th style={{ padding: '12px 6px', textAlign: 'center', verticalAlign: 'middle', fontWeight: '800', color: '#3fb4eeff', minWidth: '120px' }}>Website</th>
+                    <th style={{ padding: '12px 6px', textAlign: 'center', verticalAlign: 'middle', fontWeight: '800', color: '#3fb4eeff', minWidth: '100px' }}>Actions</th>
+                  </tr>
+                </thead>
+                <tbody style={{ backgroundColor: 'white', fontFamily: 'Century, serif', fontSize: '0.8rem' }}>
                   {filteredPasswords.map((password, index) => (
-                    <TableRow 
-                      key={password.id} 
-                      hover
-                      sx={{ 
-                        '&:hover': { backgroundColor: 'action.hover' },
-                        backgroundColor: index % 2 === 0 ? 'transparent' : 'grey.25'
-                      }}
-                    >
-                      <TableCell>
-                        <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
-                          <Box sx={{ 
-                            p: 1, 
-                            borderRadius: 2, 
-                            bgcolor: 'primary.light', 
-                            color: 'primary.contrastText' 
-                          }}>
-                            <Key sx={{ fontSize: 16 }} />
-                          </Box>
-                          <Box>
-                            <Typography variant="body2" fontWeight="medium">
-                              {password.website}
-                            </Typography>
-                          </Box>
+                    <tr key={password.id} style={{ backgroundColor: index % 2 === 0 ? '#F8FAFC' : '#FFFFFF' }}>
+                      <td style={{ padding: '10px 6px', textAlign: 'center', color: '#8B5CF6', fontWeight: '600' }}>{password.serviceName}</td>
+                      <td style={{ padding: '10px 6px', textAlign: 'center', color: '#8B5CF6', fontWeight: '600' }}>{password.username}</td>
+                      <td style={{ padding: '10px 6px', textAlign: 'center', color: '#8B5CF6', fontWeight: '600' }}>
+                        <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 1 }}>
+                          {showPasswords[password.id] ? password.password : '••••••••'}
+                          <IconButton size="small" onClick={() => togglePasswordVisibility(password.id)}>
+                            {showPasswords[password.id] ? <VisibilityOff sx={{ fontSize: '0.9rem' }} /> : <Visibility sx={{ fontSize: '0.9rem' }} />}
+                          </IconButton>
                         </Box>
-                      </TableCell>
-                      <TableCell>
-                        <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                          <Person sx={{ fontSize: 16, color: 'text.secondary' }} />
-                          <Typography variant="body2">{password.username}</Typography>
-                        </Box>
-                      </TableCell>
-                      <TableCell>
-                        <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                          <Typography 
-                            variant="body2" 
-                            sx={{ 
-                              fontFamily: 'monospace',
-                              bgcolor: 'grey.100',
-                              px: 1,
-                              py: 0.5,
-                              borderRadius: 1,
-                              minWidth: '80px'
-                            }}
-                          >
-                            {showPasswords[password.id] ? password.password : '••••••••'}
-                          </Typography>
-                          <Tooltip title={showPasswords[password.id] ? 'Hide' : 'Show'}>
-                            <IconButton 
-                              size="small" 
-                              onClick={() => togglePasswordVisibility(password.id)}
-                              sx={{ 
-                                bgcolor: 'action.hover',
-                                '&:hover': { bgcolor: 'action.selected' }
-                              }}
-                            >
-                              {showPasswords[password.id] ? <VisibilityOff /> : <Visibility />}
-                            </IconButton>
-                          </Tooltip>
-                        </Box>
-                      </TableCell>
-                      <TableCell>
-                        <Chip 
-                          label={password.category} 
-                          color={getCategoryColor(password.category)} 
-                          size="small"
-                          sx={{ borderRadius: 2, fontWeight: 'medium' }}
-                        />
-                      </TableCell>
-                      <TableCell>
-                        <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                          <Update sx={{ fontSize: 16, color: 'text.secondary' }} />
-                          <Typography variant="body2" color="text.secondary">
-                            {password.lastUpdated}
-                          </Typography>
-                        </Box>
-                      </TableCell>
-                      <TableCell align="center">
-                        <Box sx={{ display: 'flex', gap: 1, justifyContent: 'center' }}>
-                          <Tooltip title="Edit">
-                            <IconButton 
-                              onClick={() => handleEdit(password)} 
-                              size="small"
-                              sx={{ 
-                                bgcolor: 'primary.light',
-                                color: 'primary.main',
-                                '&:hover': { bgcolor: 'primary.main', color: 'white' }
-                              }}
-                            >
-                              <Edit sx={{ fontSize: 16 }} />
-                            </IconButton>
-                          </Tooltip>
-                          <Tooltip title="Delete">
-                            <IconButton 
-                              onClick={() => handleDelete(password.id)} 
-                              size="small"
-                              sx={{ 
-                                bgcolor: 'error.light',
-                                color: 'error.main',
-                                '&:hover': { bgcolor: 'error.main', color: 'white' }
-                              }}
-                            >
-                              <Delete sx={{ fontSize: 16 }} />
-                            </IconButton>
-                          </Tooltip>
-                        </Box>
-                      </TableCell>
-                    </TableRow>
+                      </td>
+                      <td style={{ padding: '10px 6px', textAlign: 'center', color: '#8B5CF6', fontWeight: '600' }}>{password.website || '-'}</td>
+                      <td style={{ padding: '6px 8px', textAlign: 'center' }}>
+                        <IconButton size="small" color="primary" onClick={() => handleEdit(password)} disabled={loading}>
+                          <Edit />
+                        </IconButton>
+                        <IconButton 
+                          size="small" 
+                          color="error"
+                          onClick={() => handleDelete(password.id)}
+                          disabled={loading}
+                        >
+                          <Delete />
+                        </IconButton>
+                      </td>
+                    </tr>
                   ))}
                   {filteredPasswords.length === 0 && (
-                    <TableRow>
-                      <TableCell colSpan={6} align="center" sx={{ py: 4 }}>
-                        <Box sx={{ textAlign: 'center' }}>
-                          <Security sx={{ fontSize: 48, color: 'text.disabled', mb: 2 }} />
-                          <Typography variant="h6" color="text.secondary" gutterBottom>
-                            No passwords found
-                          </Typography>
-                          <Typography variant="body2" color="text.disabled">
-                            {searchTerm || filterCategory !== 'All' 
-                              ? 'Try adjusting your search or filter criteria'
-                              : 'Add your first password to get started'
-                            }
-                          </Typography>
-                        </Box>
-                      </TableCell>
-                    </TableRow>
+                    <tr>
+                      <td colSpan={5} style={{ padding: '16px', border: '1px solid #E2E8F0', textAlign: 'center' }}>
+                        No passwords found
+                      </td>
+                    </tr>
                   )}
-                </TableBody>
-              </Table>
-            </TableContainer>
+                </tbody>
+              </table>
+            </Box>
           </CardContent>
         </Card>
 
-        {/* Add/Edit Dialog */}
-        <Dialog 
-          open={open} 
-          onClose={() => setOpen(false)} 
-          maxWidth="sm" 
-          fullWidth
-          PaperProps={{
-            sx: { borderRadius: 3, boxShadow: '0 8px 32px rgba(0,0,0,0.12)' }
-          }}
-        >
-          <DialogTitle sx={{ 
-            fontWeight: 'bold', 
-            color: 'primary.main',
-            borderBottom: '1px solid',
-            borderColor: 'divider',
-            pb: 2
-          }}>
-            <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
-              <Box sx={{ 
-                p: 1, 
-                borderRadius: 2, 
-                bgcolor: 'primary.light',
-                color: 'primary.contrastText'
-              }}>
-                {editId ? <Edit /> : <Add />}
-              </Box>
-              {editId ? 'Edit Password' : 'Add New Password'}
-            </Box>
-          </DialogTitle>
-          <DialogContent sx={{ pt: 3 }}>
-            <Grid container spacing={3}>
-              <Grid item xs={12}>
-                <TextField
-                  fullWidth
-                  label="Website/Service"
-                  value={formData.website}
-                  onChange={(e) => setFormData({...formData, website: e.target.value})}
-                  required
-                  InputProps={{
-                    startAdornment: (
-                      <InputAdornment position="start">
-                        <Language color="action" />
-                      </InputAdornment>
-                    ),
-                  }}
-                  sx={{ '& .MuiOutlinedInput-root': { borderRadius: 2 } }}
-                />
-              </Grid>
-              <Grid item xs={12}>
-                <TextField
-                  fullWidth
-                  label="Username/Email"
-                  value={formData.username}
-                  onChange={(e) => setFormData({...formData, username: e.target.value})}
-                  required
-                  InputProps={{
-                    startAdornment: (
-                      <InputAdornment position="start">
-                        <Person color="action" />
-                      </InputAdornment>
-                    ),
-                  }}
-                  sx={{ '& .MuiOutlinedInput-root': { borderRadius: 2 } }}
-                />
-              </Grid>
-              <Grid item xs={12}>
-                <TextField
-                  fullWidth
-                  label="Password"
-                  type="password"
-                  value={formData.password}
-                  onChange={(e) => setFormData({...formData, password: e.target.value})}
-                  required
-                  InputProps={{
-                    startAdornment: (
-                      <InputAdornment position="start">
-                        <Lock color="action" />
-                      </InputAdornment>
-                    ),
-                    endAdornment: (
-                      <InputAdornment position="end">
-                        <Tooltip title="Generate Password">
-                          <IconButton onClick={generatePassword} edge="end">
-                            <Key />
-                          </IconButton>
-                        </Tooltip>
-                      </InputAdornment>
-                    ),
-                  }}
-                  sx={{ '& .MuiOutlinedInput-root': { borderRadius: 2 } }}
-                />
-              </Grid>
-              <Grid item xs={12}>
-                <TextField
-                  fullWidth
-                  select
-                  label="Category"
-                  value={formData.category}
-                  onChange={(e) => setFormData({...formData, category: e.target.value})}
-                  SelectProps={{ native: true }}
-                  sx={{ '& .MuiOutlinedInput-root': { borderRadius: 2 } }}
-                >
-                  {categories.map((cat) => (
-                    <option key={cat} value={cat}>{cat}</option>
-                  ))}
-                </TextField>
-              </Grid>
-            </Grid>
+        <Dialog open={deleteConfirm.open} onClose={() => setDeleteConfirm({ open: false, id: null })}>
+          <DialogTitle>Confirm Delete</DialogTitle>
+          <DialogContent>
+            <Typography>Are you sure you want to delete this password? This action cannot be undone.</Typography>
           </DialogContent>
-          <DialogActions sx={{ p: 3, borderTop: '1px solid', borderColor: 'divider' }}>
-            <Button 
-              onClick={() => setOpen(false)} 
-              color="inherit"
-              sx={{ borderRadius: 2 }}
-            >
-              Cancel
-            </Button>
-            <Button 
-              onClick={handleSubmit} 
-              variant="contained" 
-              sx={{ 
-                borderRadius: 2,
-                background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
-                px: 3
-              }}
-            >
-              {editId ? 'Update' : 'Save'} Password
+          <DialogActions>
+            <Button onClick={() => setDeleteConfirm({ open: false, id: null })}>Cancel</Button>
+            <Button onClick={confirmDelete} color="error" variant="contained" disabled={loading}>
+              {loading ? <CircularProgress size={20} /> : 'Delete'}
             </Button>
           </DialogActions>
         </Dialog>
-
-        {/* Floating Action Button */}
-        <Fab
-          color="primary"
-          onClick={() => setOpen(true)}
-          sx={{
-            position: 'fixed',
-            bottom: 24,
-            right: 24,
-            background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
-            '&:hover': {
-              background: 'linear-gradient(135deg, #5a67d8 0%, #6b46c1 100%)',
-            }
-          }}
-        >
-          <Add />
-        </Fab>
-      </Container>
+      </Box>
     </Box>
   );
 };

@@ -1,12 +1,21 @@
-import React, { useState } from 'react';
-import { Container, Paper, TextField, Button, Typography, Grid } from '@mui/material';
+import React, { useState, useEffect } from 'react';
+import { Container, Paper, TextField, Button, Typography, Grid, InputAdornment } from '@mui/material';
+import appConfig from '../config/appConfig';
 
 const WhatsApp = () => {
   const [messageData, setMessageData] = useState({
     countryCode: '+91',
     phoneNumber: '',
+    welcomeMessage: '',
     message: ''
   });
+
+  useEffect(() => {
+    setMessageData(prev => ({
+      ...prev,
+      welcomeMessage: appConfig.welcomemessage.notes
+    }));
+  }, []);
 
   const sendWhatsApp = () => {
     const { countryCode, phoneNumber, message } = messageData;
@@ -40,7 +49,8 @@ const WhatsApp = () => {
 𝕄𝔸𝕊 𝔻𝕚𝕘𝕚𝕥𝕒𝕝 𝕊𝕖𝕣𝕧𝕚𝕔𝕖𝔰 𝔎𝔬𝔬𝔳𝔞𝔱𝔥𝔲𝔯.
 Cell: 8870920095`;
 
-    const whatsappUrl = `https://wa.me/${whatsappNumber}?text=${encodeURIComponent(message + thankYouMessage)}`;
+    const finalMessage = messageData.welcomeMessage ? messageData.welcomeMessage + '\n\n' + message : message;
+    const whatsappUrl = `https://wa.me/${whatsappNumber}?text=${encodeURIComponent(finalMessage + thankYouMessage)}`;
     window.open(whatsappUrl, '_blank');
   };
 
@@ -55,6 +65,13 @@ Cell: 8870920095`;
               value={messageData.countryCode}
               onChange={(e) => setMessageData({...messageData, countryCode: e.target.value})}
               fullWidth
+              InputProps={{
+                startAdornment: (
+                  <InputAdornment position="start">
+                    <span style={{ fontSize: '20px' }}>🇮🇳</span>
+                  </InputAdornment>
+                ),
+              }}
               sx={{
                 '& .MuiOutlinedInput-root': {
                   '& fieldset': { borderColor: '#25d366' },
@@ -78,6 +95,23 @@ Cell: 8870920095`;
               }}
               fullWidth
               required
+              sx={{
+                '& .MuiOutlinedInput-root': {
+                  backgroundColor: 'white',
+                  '& fieldset': { borderColor: '#25d366' },
+                  '&:hover fieldset': { borderColor: '#128c7e' },
+                  '&.Mui-focused fieldset': { borderColor: '#075e54' }
+                }
+              }}
+            />
+          </Grid>
+          <Grid item xs={12}>
+            <TextField
+              label="Welcome Message"
+              value={messageData.welcomeMessage}
+              onChange={(e) => setMessageData({...messageData, welcomeMessage: e.target.value})}
+              fullWidth
+              placeholder="Enter your welcome message..."
               sx={{
                 '& .MuiOutlinedInput-root': {
                   '& fieldset': { borderColor: '#25d366' },

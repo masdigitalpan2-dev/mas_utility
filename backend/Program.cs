@@ -26,9 +26,13 @@ builder.Services.AddSwaggerGen(c =>
     c.SchemaFilter<SwaggerSchemaExampleFilter>();
 });
 
-// Add Access Database Services
+// Add Database Services
 builder.Services.AddSingleton<AccessDbService>();
 builder.Services.AddSingleton<AccessDatabaseService>();
+builder.Services.AddSingleton<ExpenseDatabaseService>();
+builder.Services.AddSingleton<CustomerDatabaseService>();
+builder.Services.AddSingleton<PasswordDatabaseService>();
+builder.Services.AddSingleton<PaymentDatabaseService>();
 
 builder.Services.AddCors(options =>
 {
@@ -66,7 +70,7 @@ if (app.Environment.IsDevelopment())
     });
 }
 
-app.UseHttpsRedirection();
+// app.UseHttpsRedirection(); // Disabled for development
 app.UseCors("AllowReact");
 app.UseAuthorization();
 app.MapControllers();

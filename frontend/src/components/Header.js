@@ -1,22 +1,28 @@
 import React from 'react';
 import { Box, Typography, Container } from '@mui/material';
 import { Email, Phone, LocationOn } from '@mui/icons-material';
+import { useNavigate } from 'react-router-dom';
 import Navigation from './Navigation';
+import appConfig from '../config/appConfig';
 
 const Header = () => {
+  const navigate = useNavigate();
+
   return (
     <>
       {/* Top Contact Bar */}
-      <Box sx={{ 
+       {/*
+      <Box id="top-contact-bar" sx={{ 
         background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
         backdropFilter: 'blur(20px)',
         borderBottom: '1px solid rgba(255,255,255,0.1)',
         py: 0.5
       }}>
-        <Container maxWidth="xl">
-          <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-            <Box sx={{ display: 'flex', alignItems: 'center', gap: 3 }}>
-              <Typography sx={{ 
+       
+        <Container id="contact-container" maxWidth="xl">
+          <Box id="contact-wrapper" sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+            <Box id="contact-info" sx={{ display: 'flex', alignItems: 'center', gap: 3 }}>
+              <Typography id="email-info" sx={{ 
                 color: 'white', 
                 fontSize: '13px',
                 fontWeight: '500',
@@ -25,9 +31,9 @@ const Header = () => {
                 gap: 1,
                 opacity: 0.9
               }}>
-                <Email sx={{ fontSize: 16 }} /> masdigitalservices@gmail.com
+                <Email sx={{ fontSize: 16 }} /> {appConfig.header.email}
               </Typography>
-              <Typography sx={{ 
+              <Typography id="location-info" sx={{ 
                 color: 'white', 
                 fontSize: '13px',
                 fontWeight: '500',
@@ -36,11 +42,11 @@ const Header = () => {
                 gap: 1,
                 opacity: 0.9
               }}>
-                <LocationOn sx={{ fontSize: 16 }} /> Koovathur, Andimadam, Ariyalur
+                <LocationOn sx={{ fontSize: 16 }} /> {appConfig.header.address}
               </Typography>
             </Box>
-            <Box sx={{ 
-              background: 'rgba(255,255,255,0.2)', 
+            <Box id="phone-container" sx={{ 
+              background: 'white', 
               backdropFilter: 'blur(10px)',
               px: 3, 
               py: 0.8, 
@@ -48,28 +54,28 @@ const Header = () => {
               border: '1px solid rgba(255,255,255,0.3)',
               transition: 'all 0.3s ease',
               '&:hover': {
-                background: 'rgba(255,255,255,0.3)',
+                background: 'rgba(255,255,255,0.9)',
                 transform: 'translateY(-1px)',
                 boxShadow: '0 8px 25px rgba(0,0,0,0.2)'
               }
             }}>
-              <Typography sx={{ 
-                color: 'white', 
+              <Typography id="phone-info" sx={{ 
+                color: '#12a4d9', 
                 fontWeight: '700',
                 fontSize: '14px',
                 display: 'flex',
                 alignItems: 'center',
                 gap: 1
               }}>
-                <Phone sx={{ fontSize: 16 }} /> 88 70 92 00 95
+                <Phone sx={{ fontSize: 16 }} /> {appConfig.header.mobile}
               </Typography>
             </Box>
           </Box>
         </Container>
       </Box>
-      
+      */}
       {/* Hero Section */}
-      <Box sx={{ 
+      <Box id="hero-section" sx={{ 
         background: 'linear-gradient(135deg, #667eea 0%, #764ba2 50%, #f093fb 100%)',
         position: 'relative',
         overflow: 'hidden',
@@ -84,11 +90,11 @@ const Header = () => {
           opacity: 0.3
         }
       }}>
-        <Container maxWidth="xl" sx={{ py: 2, position: 'relative', zIndex: 1 }}>
-          <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+        <Container id="hero-container" maxWidth="xl" sx={{ py: 2, position: 'relative', zIndex: 1 }}>
+          <Box id="hero-content" sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
             {/* CSC Logo Section */}
-            <Box sx={{ display: 'flex', alignItems: 'center' }}>
-              <Box sx={{
+            <Box id="csc-section" sx={{ display: 'flex', alignItems: 'center' }}>
+              <Box id="csc-logo-container" sx={{
                 width: '60px',
                 height: '60px',
                 borderRadius: '15px',
@@ -107,6 +113,7 @@ const Header = () => {
                 }
               }}>
                 <img 
+                  id="csc-logo"
                   src="/Images/CSC_Logo.png" 
                   alt="CSC Logo" 
                   style={{ 
@@ -116,44 +123,56 @@ const Header = () => {
                   }} 
                 />
               </Box>
-              <Box>
-                <Typography sx={{ 
-                  fontSize: '14px', 
-                  fontWeight: '700',
-                  color: 'white',
-                  lineHeight: 1.2,
-                  textShadow: '0 2px 10px rgba(0,0,0,0.3)'
-                }}>
-                  Common Service
-                </Typography>
-                <Typography sx={{ 
-                  fontSize: '12px', 
-                  color: 'rgba(255,255,255,0.9)',
-                  lineHeight: 1.2,
-                  fontWeight: '500'
-                }}>
-                  Centre
-                </Typography>
+              <Box id="esewa-logo-container" sx={{
+                width: '60px',
+                height: '60px',
+                borderRadius: '15px',
+                background: 'rgba(255,255,255,0.95)',
+                backdropFilter: 'blur(20px)',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                boxShadow: '0 10px 25px rgba(0,0,0,0.1)',
+                border: '1px solid rgba(255,255,255,0.2)',
+                mr: 2,
+                transition: 'all 0.3s ease',
+                '&:hover': {
+                  transform: 'translateY(-2px)',
+                  boxShadow: '0 15px 35px rgba(0,0,0,0.15)'
+                }
+              }}>
+                <img 
+                  id="esewa-logo"
+                  src="/Images/TNESewaLogo.jpg" 
+                  alt="TN E-Sewa Logo" 
+                  style={{ 
+                    width: '45px', 
+                    height: '45px', 
+                    objectFit: 'contain'
+                  }} 
+                />
               </Box>
             </Box>
             
             {/* Main Title */}
-            <Box sx={{ textAlign: 'center', flex: 1, mx: 3 }}>
-              <Typography sx={{ 
-                fontSize: { xs: '24px', md: '32px' },
-                fontWeight: '800',
-                background: 'linear-gradient(135deg, #ffffff 0%, #f8f9fa 100%)',
+            <Box id="main-title-section" sx={{ textAlign: 'center', flex: 1, mx: 3, filter: 'drop-shadow(0 8px 16px rgba(0,0,0,0.3))' }}>
+              <Typography id="main-title-text" sx={{ 
+                fontSize: { xs: '28px', md: '36px' },
+                fontWeight: '900',
+                background: 'linear-gradient(135deg, #ffffff 0%, #f8f9ff 50%, #e8f4fd 100%)',
                 backgroundClip: 'text',
                 WebkitBackgroundClip: 'text',
                 WebkitTextFillColor: 'transparent',
-                textShadow: '0 4px 20px rgba(0,0,0,0.3)',
-                lineHeight: 1.2,
+                textShadow: '0 6px 25px rgba(0,0,0,0.4)',
+                lineHeight: 1.1,
                 mb: 0.5,
-                fontFamily: '"Inter", "Roboto", sans-serif'
+                fontFamily: '"Poppins", "Arial Black", sans-serif',
+                letterSpacing: '-0.5px',
+                textTransform: 'uppercase'
               }}>
-                MAS Digital Service
+                {appConfig.header.name}
               </Typography>
-              <Box sx={{
+              <Box id="csc-badge" sx={{
                 background: 'rgba(255,255,255,0.2)',
                 backdropFilter: 'blur(10px)',
                 borderRadius: 20,
@@ -162,44 +181,25 @@ const Header = () => {
                 display: 'inline-block',
                 border: '1px solid rgba(255,255,255,0.3)'
               }}>
-                <Typography sx={{ 
+                <Typography id="csc-badge-text" sx={{ 
                   fontWeight: '600',
                   color: 'white',
                   fontSize: '12px',
                   opacity: 0.95
                 }}>
-                  Private CSC e-Sewa Center
+                  CSC & e-Sewa Center
                 </Typography>
               </Box>
             </Box>
             
             {/* MAS Logo Section */}
-            <Box sx={{ display: 'flex', alignItems: 'center' }}>
-              <Box>
-                <Typography sx={{ 
-                  fontSize: '14px', 
-                  fontWeight: '700',
-                  color: 'white',
-                  lineHeight: 1.2,
-                  textAlign: 'right',
-                  textShadow: '0 2px 10px rgba(0,0,0,0.3)'
-                }}>
-                  Digital
-                </Typography>
-                <Typography sx={{ 
-                  fontSize: '12px', 
-                  color: 'rgba(255,255,255,0.9)',
-                  lineHeight: 1.2,
-                  fontWeight: '500',
-                  textAlign: 'right'
-                }}>
-                  Services
-                </Typography>
-              </Box>
-              <Box sx={{
+            <Box id="mas-section" sx={{ display: 'flex', alignItems: 'center' }}>
+             
+             
+              <Box id="mas-logo-container" onClick={() => navigate('/contact')} sx={{
                 width: '60px',
                 height: '60px',
-                borderRadius: '50%',
+                borderRadius: '15px',
                 background: 'rgba(255,255,255,0.95)',
                 backdropFilter: 'blur(20px)',
                 display: 'flex',
@@ -207,19 +207,21 @@ const Header = () => {
                 justifyContent: 'center',
                 boxShadow: '0 10px 25px rgba(0,0,0,0.1)',
                 border: '1px solid rgba(255,255,255,0.2)',
-                ml: 2,
+                mr: 2,
                 transition: 'all 0.3s ease',
+                cursor: 'pointer',
                 '&:hover': {
                   transform: 'translateY(-2px)',
                   boxShadow: '0 15px 35px rgba(0,0,0,0.15)'
                 }
               }}>
                 <img 
-                  src="/Images/MAS_Logo.png" 
+                  id="mas-logo"
+                  src="/Images/MAS Logo Round.jpg" 
                   alt="MAS Logo" 
                   style={{ 
-                    width: '45px', 
-                    height: '45px', 
+                    width: '52px', 
+                    height: '52px', 
                     objectFit: 'contain'
                   }} 
                 />

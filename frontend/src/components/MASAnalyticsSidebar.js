@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { Box, Typography } from '@mui/material';
-import { Dashboard, Analytics, Person, AccountBalance, Receipt, MoneyOff } from '@mui/icons-material';
+import { Dashboard, Analytics, Person, AccountBalance, Receipt, MoneyOff, Lock } from '@mui/icons-material';
 
 const MASAnalyticsSidebar = ({ activeItem = 'Dashboard', onNavigate }) => {
   const [sidebarOpen, setSidebarOpen] = useState(false);
@@ -10,8 +10,12 @@ const MASAnalyticsSidebar = ({ activeItem = 'Dashboard', onNavigate }) => {
     { icon: <Person />, label: 'Customer', href: '/customers' },
     { icon: <AccountBalance />, label: 'Payments', href: '/pending' },
     { icon: <MoneyOff />, label: 'Expenses', href: '/expenses' },
+    { icon: <Lock />, label: 'Password Manager', href: '/password' },
     { icon: <Receipt />, label: 'Reports', href: '/reports' }
   ];
+
+  const minimizedItems = ['Day Sales', 'Password Manager', 'Customer'];
+  const displayItems = sidebarOpen ? menuItems : menuItems.filter(item => minimizedItems.includes(item.label));
 
   return (
     <Box 
@@ -27,7 +31,7 @@ const MASAnalyticsSidebar = ({ activeItem = 'Dashboard', onNavigate }) => {
       onMouseEnter={() => setSidebarOpen(true)}
       onMouseLeave={() => setSidebarOpen(false)}
     >
-      {sidebarOpen && (
+      {sidebarOpen ? (
         <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 3 }}>
           <img 
             src="/Images/MAS Logo Round.jpg" 
@@ -38,9 +42,17 @@ const MASAnalyticsSidebar = ({ activeItem = 'Dashboard', onNavigate }) => {
             MAS DIGITAL
           </Typography>
         </Box>
+      ) : (
+        <Box sx={{ display: 'flex', justifyContent: 'center', mb: 3 }}>
+          <img 
+            src="/Images/MAS Logo Round.jpg" 
+            alt="MAS Logo" 
+            style={{ width: 32, height: 32, borderRadius: '50%' }}
+          />
+        </Box>
       )}
       
-      {menuItems.map((item, index) => (
+      {displayItems.map((item, index) => (
         <Box 
           key={index} 
           sx={{
@@ -59,6 +71,10 @@ const MASAnalyticsSidebar = ({ activeItem = 'Dashboard', onNavigate }) => {
           onClick={() => {
             if ((item.label === 'Customer' || item.label === 'Day Sales' || item.label === 'Payments' || item.label === 'Expenses') && onNavigate) {
               onNavigate(item.label);
+            } else if (item.label === 'Password Manager' && onNavigate) {
+              onNavigate('PasswordManager.js');
+            } else if (item.label === 'Reports' && onNavigate) {
+              onNavigate('Reports.js');
             } else if (item.href) {
               window.open(window.location.origin + item.href, '_blank');
             }

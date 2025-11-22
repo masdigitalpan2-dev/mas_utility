@@ -13,7 +13,7 @@ import ESevaForm from './pages/ESevaForm';
 import UPIPayment from './pages/UPIPayment';
 import WhatsApp from './pages/WhatsApp';
 import Login from './pages/Login';
-import Customers from './pages/Customers';
+import Customer from './pages/Customer';
 import DaySales from './pages/DaySales';
 import PendingPayments from './pages/PendingPayments';
 import Expenses from './pages/Expenses';
@@ -21,6 +21,8 @@ import Reports from './pages/Reports';
 import OnlineWork from './pages/OnlineWork';
 import PasswordManager from './pages/PasswordManager';
 import UnAccount from './pages/UnAccount';
+import MASResizer from './pages/MASResizer';
+import ContactUs from './pages/ContactUs';
 import './styles/global.css';
 
 const theme = createTheme({
@@ -32,7 +34,7 @@ const theme = createTheme({
       main: '#ff8300',
     },
     background: {
-      default: '#f8f9fa',
+      default: '#28a1e7ff',
     },
   },
   typography: {
@@ -56,6 +58,45 @@ const theme = createTheme({
         },
       },
     },
+    MuiAppBar: {
+      styleOverrides: {
+        root: {
+          background: 'linear-gradient(to bottom, #12a4d9 0%, #0d7aa3 50%, #085a7a 100%)',
+          borderBottom: '4px #12a4d9 solid',
+        },
+      },
+    },
+    MuiToolbar: {
+      styleOverrides: {
+        root: {
+          background: 'linear-gradient(to bottom, #12a4d9 0%, #0d7aa3 50%, #085a7a 100%)',
+        },
+      },
+    },
+    MuiBox: {
+      styleOverrides: {
+        root: {
+          '&.css-179jehp': {
+            background: 'linear-gradient(135deg, #12a4d9 0%, #0d7aa3 100%)',
+          },
+          '&.css-167fp6x': {
+            backgroundColor: 'white',
+          },
+        },
+      },
+    },
+    MuiTypography: {
+      styleOverrides: {
+        body1: {
+          fontFamily: '"Inter", "Segoe UI", "Roboto", sans-serif',
+          fontWeight: 500,
+          color: '#2c3e50',
+          fontSize: '1rem',
+          lineHeight: 1.7,
+          letterSpacing: '0.3px',
+        },
+      },
+    },
   },
 });
 
@@ -74,28 +115,15 @@ function App() {
     <ThemeProvider theme={theme}>
       <CssBaseline />
       <Router>
-        <Box sx={{ 
+        <Box id="app-container" sx={{ 
           display: 'flex', 
           flexDirection: 'column', 
           minHeight: '100vh',
-          background: 'linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%)'
+          background: 'linear-gradient(135deg, #f0f3f6ff 0%, #e9ecef 100%)'
         }}>
           <Header />
-          <Box sx={{ position: 'fixed', top: 10, right: 10, zIndex: 1300 }}>
-            <Button
-              variant="contained"
-              startIcon={<Logout />}
-              onClick={handleLogout}
-              sx={{ 
-                background: 'rgba(255,255,255,0.2)', 
-                backdropFilter: 'blur(10px)',
-                border: '1px solid rgba(255,255,255,0.3)'
-              }}
-            >
-              Logout ({user.name})
-            </Button>
-          </Box>
-          <Box sx={{ flex: 1, py: 2 }}>
+
+          <Box id="main-content" sx={{ flex: 1, py: 2 }}>
             <Routes>
               <Route path="/" element={<Home />} />
               <Route path="/calculator" element={<Calculator />} />
@@ -103,6 +131,8 @@ function App() {
               <Route path="/eseva" element={<ESevaForm />} />
               <Route path="/upi" element={<UPIPayment />} />
               <Route path="/whatsapp" element={<WhatsApp />} />
+              <Route path="/mas-resizer" element={<MASResizer />} />
+              <Route path="/contact" element={<ContactUs />} />
               {user.role === 'user' && (
                 <>
                   <Route path="/onlinework" element={<OnlineWork />} />
@@ -112,7 +142,7 @@ function App() {
               {user.role === 'admin' && (
                 <>
                   <Route path="/onlinework" element={<OnlineWork />} />
-                  <Route path="/customers" element={<Customers />} />
+                  <Route path="/customers" element={<Customer />} />
                   <Route path="/daysales" element={<DaySales />} />
                   <Route path="/pending" element={<PendingPayments />} />
                   <Route path="/expenses" element={<Expenses />} />

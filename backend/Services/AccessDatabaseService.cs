@@ -20,7 +20,7 @@ namespace MASDigitalService.Services
             connection.Open();
 
             var createTableSql = @"
-                CREATE TABLE IF NOT EXISTS daysale1 (
+                CREATE TABLE IF NOT EXISTS daysale (
                     Id INTEGER PRIMARY KEY AUTOINCREMENT,
                     DayDate TEXT NOT NULL,
                     DigiPay INTEGER DEFAULT 0,

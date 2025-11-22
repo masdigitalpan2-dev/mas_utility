@@ -1,22 +1,47 @@
-import React, { useState } from 'react';
-import { Box, Card, CardContent, Typography, Button, TextField, Table, TableBody, TableCell, TableContainer, TableHead, TableRow, IconButton, Chip, MenuItem, InputAdornment } from '@mui/material';
-import { Add, Edit, Delete, Refresh, MoneyOff } from '@mui/icons-material';
+import React, { useState, useEffect } from 'react';
+import { Box, Card, CardContent, Typography, Button, TextField, IconButton, MenuItem, CircularProgress } from '@mui/material';
+import { Edit, Delete, Refresh } from '@mui/icons-material';
 import MASAnalyticsSidebar from '../components/MASAnalyticsSidebar';
 
 const Expenses = ({ onNavigate }) => {
-  const [expenses, setExpenses] = useState(() => {
-    const savedExpenses = localStorage.getItem('masExpenses');
-    return savedExpenses ? JSON.parse(savedExpenses) : [
-      { id: 1, category: 'Paper', amount: 500, date: '2025-11-09', description: 'Office supplies' },
-      { id: 2, category: 'Recharge', amount: 200, date: '2024-01-14', description: 'Mobile recharge' }
-    ];
-  });
+  const [expenses, setExpenses] = useState([]);
   const [editId, setEditId] = useState(null);
   const [formData, setFormData] = useState({ category: '', amount: '', date: new Date().toISOString().split('T')[0], description: '' });
   const [searchTerm, setSearchTerm] = useState('');
   const [categoryFilter, setCategoryFilter] = useState('All');
   const [fromDate, setFromDate] = useState('');
   const [toDate, setToDate] = useState('');
+  const [loading, setLoading] = useState(false);
+
+  const API_BASE_URL = 'https://localhost:52549/api/expense';
+
+  const fetchExpenses = async () => {
+    setLoading(true);
+    try {
+      const response = await fetch(API_BASE_URL);
+      if (response.ok) {
+        const records = await response.json();
+        const formattedRecords = records.map(r => ({
+          ...r,
+          date: r.date ? r.date.split('T')[0] : r.date
+        }));
+        setExpenses(formattedRecords);
+        localStorage.setItem('masExpenses', JSON.stringify(formattedRecords));
+      }
+    } catch (error) {
+      console.error('API Error:', error);
+      const savedExpenses = localStorage.getItem('masExpenses');
+      if (savedExpenses) {
+        setExpenses(JSON.parse(savedExpenses));
+      }
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    fetchExpenses();
+  }, []);
 
   const handleSubmit = async () => {
     if (!formData.category || !formData.amount) {
@@ -35,20 +60,69 @@ const Expenses = ({ onNavigate }) => {
       return;
     }
     
-    let updatedExpenses;
-    if (editId) {
-      updatedExpenses = expenses.map(e => e.id === editId ? { ...formData, id: editId, amount: parseFloat(formData.amount) } : e);
-    } else {
-      updatedExpenses = [...expenses, { ...formData, id: Date.now(), amount: parseFloat(formData.amount) }];
+    setLoading(true);
+    const recordData = {
+      category: formData.category,
+      amount: parseFloat(formData.amount),
+      date: formData.date,
+      description: formData.description || ''
+    };
+    
+    try {
+      const url = editId ? `${API_BASE_URL}/${editId}` : API_BASE_URL;
+      const method = editId ? 'PUT' : 'POST';
+      
+      const response = await fetch(url, {
+        method,
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(recordData)
+      });
+      
+      if (response.ok) {
+        if (!window.Swal) {
+          const script = document.createElement('script');
+          script.src = 'https://cdn.jsdelivr.net/npm/sweetalert2@11';
+          document.head.appendChild(script);
+          await new Promise(resolve => script.onload = resolve);
+        }
+        await window.Swal.fire({
+          title: editId ? 'Updated!' : 'Saved!',
+          text: `Expense ${editId ? 'updated' : 'saved'} successfully!`,
+          icon: 'success',
+          timer: 2000,
+          showConfirmButton: false
+        });
+        await fetchExpenses();
+        setFormData({ category: '', amount: '', date: new Date().toISOString().split('T')[0], description: '' });
+        setEditId(null);
+      } else {
+        const errorText = await response.text();
+        alert(`Error saving expense: ${errorText}`);
+      }
+    } catch (error) {
+      console.error('API Error:', error);
+      let updatedExpenses;
+      if (editId) {
+        updatedExpenses = expenses.map(e => e.id === editId ? { ...recordData, id: editId } : e);
+      } else {
+        updatedExpenses = [...expenses, { ...recordData, id: Date.now() }];
+      }
+      setExpenses(updatedExpenses);
+      localStorage.setItem('masExpenses', JSON.stringify(updatedExpenses));
+      setFormData({ category: '', amount: '', date: new Date().toISOString().split('T')[0], description: '' });
+      setEditId(null);
+    } finally {
+      setLoading(false);
     }
-    setExpenses(updatedExpenses);
-    localStorage.setItem('masExpenses', JSON.stringify(updatedExpenses));
-    setFormData({ category: '', amount: '', date: new Date().toISOString().split('T')[0], description: '' });
-    setEditId(null);
   };
 
   const handleEdit = (expense) => {
-    setFormData(expense);
+    setFormData({
+      category: expense.category,
+      amount: expense.amount,
+      date: expense.date,
+      description: expense.description || ''
+    });
     setEditId(expense.id);
   };
 
@@ -72,9 +146,33 @@ const Expenses = ({ onNavigate }) => {
     });
     
     if (result.isConfirmed) {
-      const updatedExpenses = expenses.filter(e => e.id !== id);
-      setExpenses(updatedExpenses);
-      localStorage.setItem('masExpenses', JSON.stringify(updatedExpenses));
+      setLoading(true);
+      try {
+        const response = await fetch(`${API_BASE_URL}/${id}`, {
+          method: 'DELETE'
+        });
+        
+        if (response.ok) {
+          await window.Swal.fire({
+            title: 'Deleted!',
+            text: 'Expense has been deleted.',
+            icon: 'success',
+            timer: 2000,
+            showConfirmButton: false
+          });
+          await fetchExpenses();
+        } else {
+          const errorText = await response.text();
+          await window.Swal.fire('Error!', `Failed to delete expense: ${errorText}`, 'error');
+        }
+      } catch (error) {
+        console.error('API Error:', error);
+        const updatedExpenses = expenses.filter(e => e.id !== id);
+        setExpenses(updatedExpenses);
+        localStorage.setItem('masExpenses', JSON.stringify(updatedExpenses));
+      } finally {
+        setLoading(false);
+      }
     }
   };
 
@@ -88,6 +186,13 @@ const Expenses = ({ onNavigate }) => {
 
   const totalExpenses = Math.round(filteredExpenses.reduce((sum, e) => sum + parseFloat(e.amount || 0), 0));
   const todayExpenses = Math.round(expenses.filter(e => e.date === new Date().toISOString().split('T')[0]).reduce((sum, e) => sum + parseFloat(e.amount || 0), 0));
+
+  // Update localStorage when expenses change for DaySales integration
+  useEffect(() => {
+    if (expenses.length > 0) {
+      localStorage.setItem('masExpenses', JSON.stringify(expenses));
+    }
+  }, [expenses]);
 
   return (
     <Box sx={{ display: 'flex', height: '100vh', bgcolor: '#FAFAFA', overflow: 'hidden' }}>
@@ -206,6 +311,7 @@ const Expenses = ({ onNavigate }) => {
               <Button 
                 id="expense-submit-btn"
                 onClick={handleSubmit}
+                disabled={loading}
                 variant="contained"
                 sx={{ 
                   background: 'linear-gradient(135deg, #8B5CF6 0%, #7C3AED 100%)',
@@ -226,7 +332,7 @@ const Expenses = ({ onNavigate }) => {
                   }
                 }}
               >
-                {editId ? '✏️ Update Expense' : '+ Add Expense'}
+                {loading ? <CircularProgress size={20} color="inherit" /> : (editId ? '✏️ Update Expense' : '+ Add Expense')}
               </Button>
               <Button
                 id="expense-reset-btn"
@@ -378,17 +484,23 @@ const Expenses = ({ onNavigate }) => {
                   </tr>
                 </thead>
                 <tbody style={{ backgroundColor: 'white', fontFamily: 'Century, serif', fontSize: '0.8rem' }}>
-                  {filteredExpenses.map((expense, index) => (
+                  {loading ? (
+                    <tr>
+                      <td colSpan={5} style={{ textAlign: 'center', padding: '20px' }}>
+                        <CircularProgress size={24} />
+                      </td>
+                    </tr>
+                  ) : filteredExpenses.map((expense, index) => (
                     <tr key={expense.id} style={{ backgroundColor: index % 2 === 0 ? '#F8FAFC' : '#FFFFFF' }}>
                       <td style={{ padding: '6px 8px', textAlign: 'center', color: '#8B5CF6', fontWeight: '600' }}>{expense.category}</td>
                       <td style={{ padding: '6px 8px', textAlign: 'center', color: '#EF4444', fontWeight: 'bold' }}>₹{expense.amount}</td>
                       <td style={{ padding: '6px 8px', textAlign: 'center', color: '#8B5CF6', fontWeight: '600' }}>{expense.date}</td>
                       <td style={{ padding: '6px 8px', textAlign: 'center', color: '#6b7280', fontWeight: '500' }}>{expense.description || '-'}</td>
                       <td style={{ padding: '6px 8px', textAlign: 'center' }}>
-                        <IconButton onClick={() => handleEdit(expense)} color="primary">
+                        <IconButton onClick={() => handleEdit(expense)} color="primary" disabled={loading}>
                           <Edit />
                         </IconButton>
-                        <IconButton onClick={() => handleDelete(expense.id)} color="error">
+                        <IconButton onClick={() => handleDelete(expense.id)} color="error" disabled={loading}>
                           <Delete />
                         </IconButton>
                       </td>
